@@ -1,4 +1,5 @@
-import glob
+import glob,sys,os
+import os.path
 # -*- coding: utf-8 -*-
 
 #########################################################################
@@ -15,14 +16,16 @@ from gluon.contrib.appconfig import AppConfig
 ## once in production, remove reload=True to gain full speed
 myconf = AppConfig(reload=True)
 
-
 if not request.env.web2py_runtime_gae:
     ## if NOT running on Google App Engine use SQLite or other DB
     #db = DAL(myconf.take('db.uri'), pool_size=myconf.take('db.pool_size', cast=int), check_reserved=['all'])
     #get first db file in tmp
-    file = glob.glob('/tmp/*.db')
-    print file
+    file = glob.glob(os.getcwd()+'/applications/TEMPLATE/tmp/*db')#+'applications/TEMPLATE/tmp/*.db')
+    print file 
+    print os.getcwd()+'/*py'
+    print glob.glob("./web2py/applications/TEMPLATE/tmp/*db")
     db = DAL('sqlite://'+file[0])
+    
 else:
     ## connect to Google BigTable (optional 'google:datastore://namespace')
     db = DAL('google:datastore+ndb')
