@@ -1,11 +1,28 @@
 #!usr/bin/env/python
 # -*- coding: utf-8 -*-
-import sys, os
+import sys, os, time, errno
 import os.path
 import sqlite3
 #lib read excel files
 import xlrd
+import subprocess
 
+path=""
+
+def creationDossier():
+	global path
+	localtime = time.localtime(time.time()) #heure machine
+	timedate = str(localtime[0])+'_'+str(localtime[1])+'_'+str(localtime[2])
+	if os.name =="nt":
+		path="C:\\TMP\\"+timedate+'\\'
+	else:
+		path="/tmp/"+timedate+'/'
+	try:
+		os.makedirs(path)
+	except OSError as exception:
+		if exception.errno != errno.EEXIST:
+			raise
+	#os.chdir(path) # change de répertoire courant
 
 
 if( len(sys.argv)>1 ):
@@ -40,16 +57,16 @@ if( len(sys.argv)>1 ):
 
 
 	#erase old db
-	if(os.path.isdir("tmp")):
-		if(os.path.isfile("tmp/"+sys.argv[1].split('.')[0]+".db")):
-			os.remove("tmp/"+sys.argv[1].split('.')[0]+".db")
-	else:
-		os.mkdir("tmp")
-		os.chmod("tmp",0o777)
-
+	creationDossier()
+	if(os.path.isdir(path)):
+		if(os.path.isfile(path+sys.argv[1].split('.')[0]+".db")):
+			os.remove(path+sys.argv[1].split('.')[0]+".db")
+	
 
 	#db
-	conn = sqlite3.connect("tmp/"+sys.argv[1].split('.')[0]+".db")
+	print (path)
+	print(str(path)+sys.argv[1].split('.')[0]+".db")
+	conn = sqlite3.connect(path+sys.argv[1].split('.')[0]+".db")
 	c = conn.cursor()
 
 
@@ -70,10 +87,19 @@ if( len(sys.argv)>1 ):
 	# We can also close the connection if we are done with it.
 	# Just be sure any changes have been committed or they will be lost.
 	conn.close()
+	
+	#var a creer : logs/log	
 
 	from subprocess import call
-	call(["cp","-R","tmp","web2py/applications/TEMPLATE/tmp/"])
-	call(["python", "web2py/web2py.py"])
+	try:
+		subprocess.check_call(["cp","-R", path+'.',"web2py/applications/TEMPLATE/tmp/"])
+	except subprocess.CalledProcessError:
+		sys.exit("Erreur: "+path+", web2py ou un de ses dossiers a disparu de l'emplacement prévu")
+
+	try:
+		subprocess.check_call(["python", "web2py/web2py.py"])
+	except subprocess.CalledProcessError:
+		sys.exit("Erreur: python n'est pas présent sur la machine ou web2py a changé d'emplacement")
 
 else:
 	print("Erreur : pas de fichier sélectionné")
