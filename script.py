@@ -7,6 +7,7 @@ import sqlite3
 import xlrd
 
 
+
 if( len(sys.argv)>1 ):
 	try:
 		#workbook doesn't need to be explicitly closed
@@ -33,6 +34,7 @@ if( len(sys.argv)>1 ):
 			os.remove("tmp/"+sys.argv[1].split('.')[0]+".db")
 	else:
 		os.mkdir("tmp")
+		os.chmod("tmp",0o777)
 
 
 	#db
@@ -57,6 +59,10 @@ if( len(sys.argv)>1 ):
 	# We can also close the connection if we are done with it.
 	# Just be sure any changes have been committed or they will be lost.
 	conn.close()
+	
+	from subprocess import call
+	call(["cp","-R","tmp","web2py/applications/TEMPLATE/models/"])
+	call(["python", "web2py/web2py.py"])
 
 else:
 	print("Erreur : pas de fichier sélectionné")
