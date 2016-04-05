@@ -24,12 +24,15 @@ if( len(sys.argv)>1 ):
 
 
 	#erase old db
-	if(os.path.isfile("test.db")):
-		os.remove("test.db")
+	if(os.path.isdir("tmp")):
+		if(os.path.isfile("tmp/"+sys.argv[1].split('.')[0]+".db")):
+			os.remove("tmp/"+sys.argv[1].split('.')[0]+".db")
+	else:
+		os.mkdir("tmp")
 
 
 	#db
-	conn = sqlite3.connect("test.db")
+	conn = sqlite3.connect("tmp/"+sys.argv[1].split('.')[0]+".db")
 	c = conn.cursor()
 
 
