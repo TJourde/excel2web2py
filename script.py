@@ -8,13 +8,11 @@ import xlrd
 
 
 if( len(sys.argv)>1 ):
-
 	try:
 		#workbook doesn't need to be explicitly closed
 		wb = xlrd.open_workbook(sys.argv[1])
-	except(OpenErrors):
-		print("Erreur: le fichier n'a pas pu être consulté")
-		fail()
+	except(IOError):
+		sys.exit("Erreur: le fichier n'a pas pu être consulté")
 
 	# get name of first sheet
 	sh = wb.sheet_by_name(wb.sheet_names()[0])
