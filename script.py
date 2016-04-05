@@ -9,6 +9,17 @@ import xlrd
 
 
 if( len(sys.argv)>1 ):
+	
+	
+	if(" " in sys.argv[1]):
+		sys.exit("Erreur: le nom du fichier contient des espaces")
+
+	try:
+		sys.argv[1].encode('ascii')
+	
+	except (UnicodeError):
+		sys.exit("Erreur: le nom du fichier n'est pas unicode")
+
 	try:
 		#workbook doesn't need to be explicitly closed
 		wb = xlrd.open_workbook(sys.argv[1])
@@ -59,9 +70,9 @@ if( len(sys.argv)>1 ):
 	# We can also close the connection if we are done with it.
 	# Just be sure any changes have been committed or they will be lost.
 	conn.close()
-	
+
 	from subprocess import call
-	call(["cp","-R","tmp","web2py/applications/TEMPLATE/models/"])
+	call(["cp","-R","tmp","web2py/applications/TEMPLATE/tmp/"])
 	call(["python", "web2py/web2py.py"])
 
 else:
