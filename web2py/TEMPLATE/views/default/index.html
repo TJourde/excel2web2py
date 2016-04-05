@@ -1,0 +1,41 @@
+{{extend 'layout.html'}}
+
+{{block header}}
+    <header class="container-fluid background">
+      <div class="jumbotron text-center">
+      </div>
+    </header>
+{{end}}
+
+{{if 'message' in globals():}}
+<h2>{{=message}}</h2>
+<p class="lead">{{=T('How did you get here?')}}</p>
+<ol>
+  <li>{{=T('You are successfully running your IINS App')}}</li>
+ <li>{{=XML(T('The output of the F %s', A('web2py/applications/default/manage_transactions.html' % request,
+    _href=URL(args=('manage_transactions')))))}}</li>
+</ol>
+{{elif 'content' in globals():}}
+{{=content}}
+{{else:}}
+{{=BEAUTIFY(response._vars)}}
+{{pass}}
+
+
+<div class="container">
+    <div class="row">
+        <div id="web2py_user_form" class="col-lg-6">
+
+            <h1></h1>
+            {{=form}}
+        </div>
+    </div>
+</div>
+<div class="container">
+    <div class="row">
+        <div id="web2py_user_form" class="jumbotron text-center">
+            <h2></h2>
+            {{=records}}
+        </div>
+    </div>
+</div>

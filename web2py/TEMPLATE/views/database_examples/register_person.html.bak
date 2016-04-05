@@ -1,0 +1,28 @@
+<!-- <link href="{{=URL('static', 'css/yourfile.css')}}" rel="stylesheet" type="text/css" />  USE YOUR OWN CSS -->
+
+{{extend 'layout.html'}}
+
+{{block header}}
+    <header class="container-fluid background">
+      <div class="jumbotron text-center">
+      </div>
+    </header>
+{{end}}
+
+<div class="container">
+    <div class="row">
+        <div id="web2py_user_form" class="col-lg-6">
+
+            <h1></h1>
+            {{=form}}
+        </div>
+    </div>
+</div>
+<div class="container">
+    <div class="row">
+        <div id="web2py_user_form" class="jumbotron text-center">
+            <h2>Current users</h2>
+            <!--{{=records}}-->
+        </div>
+    </div>
+</div>
