@@ -84,27 +84,27 @@ if( len(sys.argv)>1 ):
 
 
 	# Create table
-	s ='CREATE TABLE "'+ shname+'"('
-	for i in namecol:
-		s+='"'+i+'",'
-	s=s[:-1]
-	s+=')'
-	c.execute(s)
+	#s ='CREATE TABLE "'+ shname+'"('
+	#for i in namecol:
+	#	s+='"'+i+'",'
+	#s=s[:-1]
+	#s+=')'
+	#c.execute(s)
 
 	# Insert rows of data
-	query = ""
-	firstline=True
-	for rownum in range(sh.nrows):
-		if(not firstline):
-			query = "INSERT INTO "+shname+" VALUES ("
-			for rowval in sh.row_values(rownum):
-				#if ((rowval != "")and(not rowval.isspace())):
-				query+='"'+rowval+'"'+','
-			query=query[:-1]
-			query+=')'
-			c.execute(query)
-		else:
-			firstline=False
+	#query = ""
+	#firstline=True
+	#for rownum in range(sh.nrows):
+	#	if(not firstline):
+	#		query = "INSERT INTO "+shname+" VALUES ("
+	#		for rowval in sh.row_values(rownum):
+	#			#if ((rowval != "")and(not rowval.isspace())):
+	#			query+='"'+rowval+'"'+','
+	#		query=query[:-1]
+	#		query+=')'
+	#		c.execute(query)
+	#	else:
+	#		firstline=False
 
 	
 
@@ -130,12 +130,35 @@ if( len(sys.argv)>1 ):
 		sys.exit("db_backup n'est plus présent")	
 
 	with open("web2py/applications/TEMPLATE/models/db.py","a") as f:
-		f.write('db.define_table("'+shname+'"')
-		a=0
+		#Create table
+		f.write('\ndb.define_table("'+shname+'"')
+		
 		for i in namecol:
 			f.write(',Field("'+i.encode('utf8')+'")')
-			a+=1
 		f.write(')')
+
+		# Insert rows of data
+		firstline=True
+		for rownum in range(sh.nrows):
+			if(not firstline):
+				query = "INSERT INTO "+shname+"("
+				for i in namecol:
+					query+=i+','
+				query=query[:-1]
+				query+=") VALUES("				
+
+				for rowval in sh.row_values(rownum):
+					if ("'" in rowval):
+						index = rowval.find("'")
+						rowval=rowval[:index]+"'"+rowval[index:]
+					query+="'"+rowval+"'"+","
+				query=query[:-1]
+				query+=')'
+				f.write('\ndb.executesql("'+query.encode('utf8')+'")')
+			else:
+				firstline=False
+
+		
 	#with open("/home/tanguyl/Documents/projetPython/web2py/applications/TEMPLATE/models/db.py","r") as f:
 	#	print(f.read())
 

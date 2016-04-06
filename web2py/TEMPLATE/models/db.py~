@@ -1,7 +1,5 @@
-import glob,sys,os
-import os.path
 # -*- coding: utf-8 -*-
-
+import glob,os
 #########################################################################
 ## This scaffolding model makes your app work on Google App Engine too
 ## File is released under public domain and you can use without limitations
@@ -16,14 +14,12 @@ from gluon.contrib.appconfig import AppConfig
 ## once in production, remove reload=True to gain full speed
 myconf = AppConfig(reload=True)
 
+
 if not request.env.web2py_runtime_gae:
     ## if NOT running on Google App Engine use SQLite or other DB
     #db = DAL(myconf.take('db.uri'), pool_size=myconf.take('db.pool_size', cast=int), check_reserved=['all'])
-    #get first db file in tmp
-    #file = glob.glob(os.getcwd()+'/applications/TEMPLATE/tmp/*db')
-    #db = DAL('sqlite://'+file[0])
-    db = DAL('sqlite://storage.sqlite')
-    
+    #db = DAL('sqlite://storage.sqlite')
+    db = DAL('sqlite://'+glob.glob(os.getcwd()+'/applications/TEMPLATE/tmp/*db')[0])
 else:
     ## connect to Google BigTable (optional 'google:datastore://namespace')
     db = DAL('google:datastore+ndb')
@@ -101,4 +97,13 @@ auth.settings.reset_password_requires_verification = True
 # auth.enable_record_versioning(db)
 
 # DEFINE TABLE HERE
-db.define_table("Produitschimiques",Field("Nom_francais"),Field("Nom_anglais"),Field("Synonyme"),Field("N_CAS"),Field("Formule"),Field("Masse_molaire"),Field("Forme"),Field("Symbole"),Field("Mentions_de_danger"),Field("Conseils_de_prudence"),Field("FDS_piece_jointe"),Field("Hazard_statements"),Field("Precautionary_tatements"),Field("MSDS_piece_jointe"),Field("Lien_FDS"),Field("Lien_MSDS"))
+
+db.define_table("Produits_chimiques",Field("Nom_francais"),Field("Nom_anglais"),Field("Synonyme"),Field("N_CAS"),Field("Formule"),Field("Masse_molaire"),Field("Forme"),Field("Symbole"),Field("Mentions_de_danger"),Field("Conseils_de_prudence"),Field("FDS_piece_jointe"),Field("Hazard_statements"),Field("Precautionary_tatements"),Field("MSDS_piece_jointe"),Field("Lien_FDS"),Field("Lien_MSDS"))
+
+db.executesql("INSERT INTO Produits_chimiques(Nom_francais,Nom_anglais,Synonyme,N_CAS,Formule,Masse_molaire,Forme,Symbole,Mentions_de_danger,Conseils_de_prudence,FDS_piece_jointe,Hazard_statements,Precautionary_tatements,MSDS_piece_jointe,Lien_FDS,Lien_MSDS) VALUES('2,2'-Thiodiéthanol','2,2'-Thiodiethanol','2,2′-Thiobis(ethanol) | Bis(2-hydroxyethyl) sulfide | Thiodiethylene glycol | Thiodiglycol','111-48-8','C4H10O2S','122,19 g/mol','Solide','SGH07','H319','P305+P351+P338','2,2'-Thiodiéthanol','H319','P305+P351+P338','2,2'-Thiodiethanol_(anglais)','http://www.sigmaaldrich.com/MSDS/MSDS/DisplayMSDSPage.do?country=FR&language=fr&productNumber=166782&brand=ALDRICH&PageToGoToURL=http%3A%2F%2Fwww.sigmaaldrich.com%2Fcatalog%2Fproduct%2Faldrich%2F166782%3Flang%3Dfr','http://www.sigmaaldrich.com/MSDS/MSDS/DisplayMSDSPage.do?country=FR&language=EN-generic&productNumber=166782&brand=ALDRICH&PageToGoToURL=http%3A%2F%2Fwww.sigmaaldrich.com%2Fcatalog%2Fproduct%2Faldrich%2F166782%3Flang%3Dfr')")
+
+
+
+
+
+
