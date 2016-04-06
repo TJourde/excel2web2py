@@ -44,14 +44,27 @@ if( len(sys.argv)>1 ):
 		sys.exit("Erreur: le fichier n'a pas pu être consulté")
 
 	# get name of first sheet
+	try:
+		wb.sheet_names()[0].encode('ascii')
+	
+	except (UnicodeError):
+		sys.exit("Erreur: le nom de la feuille n'est pas unicode")
 	sh = wb.sheet_by_name(wb.sheet_names()[0])
+	shname = wb.sheet_names()[0].replace(" ","_").replace("(","").replace(")","")
 
 	# get names of columns (1st row value)
 	namecol = []
-	for colnum in range(sh.ncols):
-		 namecol.append(sh.col_values(colnum)[0])
 
-	print("Sheet: "+ wb.sheet_names()[0])
+	for colnum in range(sh.ncols):
+		try:#necessary or else db attributes will look funny 
+			sh.col_values(colnum)[0].encode('ascii')
+	
+		except (UnicodeError):
+			sys.exit(sh.col_values(colnum)[0]+"Erreur: Nom de colonne n'est pas unicode")
+
+		namecol.append(sh.col_values(colnum)[0].replace(" ","_").replace("(","").replace(")",""))
+
+	print("Sheet: "+ shname)
 	for i in namecol:
 		print("Column: "+i)
 
@@ -71,15 +84,29 @@ if( len(sys.argv)>1 ):
 
 
 	# Create table
-	s ='CREATE TABLE "'+ wb.sheet_names()[0]+'"('
+	s ='CREATE TABLE "'+ shname+'"('
 	for i in namecol:
 		s+='"'+i+'",'
 	s=s[:-1]
 	s+=')'
 	c.execute(s)
 
-	# Insert a row of data
-	#c.execute("INSERT INTO stocks VALUES ('2006-01-05','BUY','RHAT',100,35.14)")
+	# Insert rows of data
+	query = ""
+	firstline=True
+	for rownum in range(sh.nrows):
+		if(not firstline):
+			query = "INSERT INTO "+shname+" VALUES ("
+			for rowval in sh.row_values(rownum):
+				#if ((rowval != "")and(not rowval.isspace())):
+				query+='"'+rowval+'"'+','
+			query=query[:-1]
+			query+=')'
+			c.execute(query)
+		else:
+			firstline=False
+
+	
 
 	# Save (commit) the changes
 	conn.commit()
@@ -91,15 +118,34 @@ if( len(sys.argv)>1 ):
 	#var a creer : logs/log	
 
 	from subprocess import call
+	subprocess.call(["rm","-R","web2py/applications/TEMPLATE/tmp/"])
 	try:
 		subprocess.check_call(["cp","-R", path+'.',"web2py/applications/TEMPLATE/tmp/"])
 	except subprocess.CalledProcessError:
 		sys.exit("Erreur: "+path+", web2py ou un de ses dossiers a disparu de l'emplacement prévu")
 
 	try:
+		subprocess.check_call(["cp","web2py/applications/TEMPLATE/models/db_backup.py","web2py/applications/TEMPLATE/models/db.py"])
+	except subprocess.CalledProcessError:
+		sys.exit("db_backup n'est plus présent")	
+
+	with open("web2py/applications/TEMPLATE/models/db.py","a") as f:
+		f.write('db.define_table("'+shname+'"')
+		a=0
+		for i in namecol:
+			f.write(',Field("'+i.encode('utf8')+'")')
+			a+=1
+		f.write(')')
+	#with open("/home/tanguyl/Documents/projetPython/web2py/applications/TEMPLATE/models/db.py","r") as f:
+	#	print(f.read())
+
+	try:
 		subprocess.check_call(["python", "web2py/web2py.py"])
 	except subprocess.CalledProcessError:
 		sys.exit("Erreur: python n'est pas présent sur la machine ou web2py a changé d'emplacement")
 
+
 else:
 	print("Erreur : pas de fichier sélectionné")
+
+

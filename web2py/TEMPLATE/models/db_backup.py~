@@ -1,5 +1,3 @@
-import glob,sys,os
-import os.path
 # -*- coding: utf-8 -*-
 
 #########################################################################
@@ -16,14 +14,10 @@ from gluon.contrib.appconfig import AppConfig
 ## once in production, remove reload=True to gain full speed
 myconf = AppConfig(reload=True)
 
+
 if not request.env.web2py_runtime_gae:
     ## if NOT running on Google App Engine use SQLite or other DB
-    #db = DAL(myconf.take('db.uri'), pool_size=myconf.take('db.pool_size', cast=int), check_reserved=['all'])
-    #get first db file in tmp
-    #file = glob.glob(os.getcwd()+'/applications/TEMPLATE/tmp/*db')
-    #db = DAL('sqlite://'+file[0])
-    db = DAL('sqlite://storage.sqlite')
-    
+    db = DAL(myconf.take('db.uri'), pool_size=myconf.take('db.pool_size', cast=int), check_reserved=['all'])
 else:
     ## connect to Google BigTable (optional 'google:datastore://namespace')
     db = DAL('google:datastore+ndb')
@@ -101,4 +95,3 @@ auth.settings.reset_password_requires_verification = True
 # auth.enable_record_versioning(db)
 
 # DEFINE TABLE HERE
-db.define_table("Produitschimiques",Field("Nom_francais"),Field("Nom_anglais"),Field("Synonyme"),Field("N_CAS"),Field("Formule"),Field("Masse_molaire"),Field("Forme"),Field("Symbole"),Field("Mentions_de_danger"),Field("Conseils_de_prudence"),Field("FDS_piece_jointe"),Field("Hazard_statements"),Field("Precautionary_tatements"),Field("MSDS_piece_jointe"),Field("Lien_FDS"),Field("Lien_MSDS"))
