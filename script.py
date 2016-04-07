@@ -130,6 +130,10 @@ if( len(sys.argv)>1 ):
 		sys.exit("db_backup n'est plus présent")	
 
 	with open("web2py/applications/TEMPLATE/models/db.py","a") as f:
+		#getDb -> called from default.py to get the same db as db.py
+		f.write('\ndef getDb():\n    module_path=os.path.abspath(os.path.dirname(__file__))\n    dbpath = module_path + "/../databases"\n    db_name = "storage.sqlite"\n    db = DAL("sqlite://"+ db_name ,folder=dbpath, auto_import=True)\n    return db')
+		#getTable -> called from default.py to get the table generated
+		f.write('\ndef getTable(db):\n    return db.'+shname)
 		#Create table
 		f.write('\ndb.define_table("'+shname+'"')
 		
@@ -162,8 +166,10 @@ if( len(sys.argv)>1 ):
 	#with open("/home/tanguyl/Documents/projetPython/web2py/applications/TEMPLATE/models/db.py","r") as f:
 	#	print(f.read())
 
+
 	try:
 		subprocess.check_call(["python", "web2py/web2py.py"])
+
 	except subprocess.CalledProcessError:
 		sys.exit("Erreur: python n'est pas présent sur la machine ou web2py a changé d'emplacement")
 
