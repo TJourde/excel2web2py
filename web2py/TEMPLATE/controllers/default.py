@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # this file is released under public domain and you can use without limitations
-
+import sys,os
 #########################################################################
 ## This is a sample controller
 ## - index is the default action of any application
@@ -10,7 +10,17 @@
 
 #requires login
 def index():
-    form=records="to fill"
+    from gluon.dal import DAL, Field
+    from gluon.validators import *
+    module_path=os.path.abspath(os.path.dirname(__file__))
+    dbpath = module_path +'/../databases'
+    db_name = "storage.sqlite"
+    db = DAL("sqlite://"+ db_name ,folder=dbpath, auto_import=True)
+    table = db.tables[0]#name of last new table
+    x = getattr(db, table)#get the TABLE with the corresponding name !Bugs if name of table equals one other attribute of DAL (like debug)!
+    rows = db(x).select()
+    form=SQLFORM(x)
+    records=SQLFORM.grid(x)
     return dict(form=form, records=records)
 
 

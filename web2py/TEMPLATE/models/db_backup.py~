@@ -97,4 +97,3 @@ auth.settings.reset_password_requires_verification = True
 # auth.enable_record_versioning(db)
 
 # DEFINE TABLE HERE
-db(db.Produits_chimiques).select()
