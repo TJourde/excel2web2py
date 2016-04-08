@@ -106,7 +106,7 @@ def insertRowsData(nameTable,sheet,cursor):
 			firstline=False
 		cursor.execute(query)
 
-
+path=str(createFolder())
 #if there is at least an argument, the script is launched
 if( len(sys.argv)>1 ):
 	
@@ -115,13 +115,12 @@ if( len(sys.argv)>1 ):
 	sh = getSheet(wb)
 	shname = getNameFirstSheetAsTableName(wb)
 	namecols= getColumnsNames(sh,shname)
-	path=str(createFolder())
-
-	if(os.path.isdir(path)):
-		if(os.path.isfile(path+sys.argv[1].split('.')[0]+".db")):
-			os.remove(path+sys.argv[1].split('.')[0]+".db")
 	
 
+	#if(os.path.isdir(path)):
+	#	if(os.path.isfile(path+sys.argv[1].split('.')[0]+".db")):
+	#		os.remove(path+sys.argv[1].split('.')[0]+".db")
+	
 	#db
 	print ("Path: "+path)
 	#print("Db :"+str(path)+sys.argv[1].split('.')[0]+".db")
