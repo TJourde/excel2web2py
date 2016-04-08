@@ -9,8 +9,7 @@ import subprocess
 
 path=""
 
-def creationDossier():
-	global path
+def creationDossier(path):
 	localtime = time.localtime(time.time()) #heure machine
 	timedate = str(localtime[0])+'_'+str(localtime[1])+'_'+str(localtime[2])
 	if os.name =="nt":
@@ -24,9 +23,8 @@ def creationDossier():
 			raise
 	#os.chdir(path) # change de répertoire courant
 
-
+#if there is at least an argument, the script is launched
 if( len(sys.argv)>1 ):
-	
 	
 	if(" " in sys.argv[1]):
 		sys.exit("Erreur: le nom du fichier contient des espaces")
@@ -70,51 +68,49 @@ if( len(sys.argv)>1 ):
 
 
 	#erase old db
-	creationDossier()
+	apply(creationDossier,path)
 	if(os.path.isdir(path)):
 		if(os.path.isfile(path+sys.argv[1].split('.')[0]+".db")):
 			os.remove(path+sys.argv[1].split('.')[0]+".db")
 	
 
 	#db
-	print (path)
-	print(str(path)+sys.argv[1].split('.')[0]+".db")
-	conn = sqlite3.connect(path+sys.argv[1].split('.')[0]+".db")
+	print ("Path: "+path)
+	#print("Db :"+str(path)+sys.argv[1].split('.')[0]+".db")
+	conn = sqlite3.connect("web2py/applications/TEMPLATE/databases/storage.sqlite")#path+sys.argv[1].split('.')[0]+".db")
 	c = conn.cursor()
 
+	#Remove old table
+	c.execute("DROP TABLE "+shname)
 
 	# Create table
-	#s ='CREATE TABLE "'+ shname+'"('
-	#for i in namecol:
-	#	s+='"'+i+'",'
-	#s=s[:-1]
-	#s+=')'
-	#c.execute(s)
+	s ='CREATE TABLE "'+ shname+'"('
+	for i in namecol:
+		s+='"'+i+'",'
+	s=s[:-1]
+	s+=')'
+	c.execute(s)
 
 	# Insert rows of data
-	#query = ""
-	#firstline=True
-	#for rownum in range(sh.nrows):
-	#	if(not firstline):
-	#		query = "INSERT INTO "+shname+" VALUES ("
-	#		for rowval in sh.row_values(rownum):
-	#			#if ((rowval != "")and(not rowval.isspace())):
-	#			query+='"'+rowval+'"'+','
-	#		query=query[:-1]
-	#		query+=')'
-	#		c.execute(query)
-	#	else:
-	#		firstline=False
-
-	
-
+	query = ""
+	firstline=True
+	for rownum in range(sh.nrows):
+		if(not firstline):
+			query = "INSERT INTO "+shname+" VALUES ("
+			for rowval in sh.row_values(rownum):
+				#if ((rowval != "")and(not rowval.isspace())):
+				query+='"'+rowval+'"'+','
+			query=query[:-1]
+			query+=')'
+			c.execute(query)
+		else:
+			firstline=False
 	# Save (commit) the changes
 	conn.commit()
 
 	# We can also close the connection if we are done with it.
 	# Just be sure any changes have been committed or they will be lost.
 	conn.close()
-	
 	#var a creer : logs/log	
 
 	from subprocess import call
@@ -129,38 +125,38 @@ if( len(sys.argv)>1 ):
 	except subprocess.CalledProcessError:
 		sys.exit("db_backup n'est plus présent")	
 
-	with open("web2py/applications/TEMPLATE/models/db.py","a") as f:
+	#with open("web2py/applications/TEMPLATE/models/db.py","a") as f:
 		#getDb -> called from default.py to get the same db as db.py
-		f.write('\ndef getDb():\n    module_path=os.path.abspath(os.path.dirname(__file__))\n    dbpath = module_path + "/../databases"\n    db_name = "storage.sqlite"\n    db = DAL("sqlite://"+ db_name ,folder=dbpath, auto_import=True)\n    return db')
+		#f.write('\ndef getDb():\n    module_path=os.path.abspath(os.path.dirname(__file__))\n    dbpath = module_path + "/../databases"\n    db_name = "storage.sqlite"\n    db = DAL("sqlite://"+ db_name ,folder=dbpath, auto_import=True)\n    return db')
 		#getTable -> called from default.py to get the table generated
-		f.write('\ndef getTable(db):\n    return db.'+shname)
+		#f.write('\ndef getTable(db):\n    return db.'+shname)
 		#Create table
-		f.write('\ndb.define_table("'+shname+'"')
+		#f.write('\ndb.define_table("'+shname+'"')
 		
-		for i in namecol:
-			f.write(',Field("'+i.encode('utf8')+'")')
-		f.write(')')
+		#for i in namecol:
+		#	f.write(',Field("'+i.encode('utf8')+'")')
+		#f.write(')')
 
 		# Insert rows of data
-		firstline=True
-		for rownum in range(sh.nrows):
-			if(not firstline):
-				query = "INSERT INTO "+shname+"("
-				for i in namecol:
-					query+=i+','
-				query=query[:-1]
-				query+=") VALUES("				
+		#firstline=True
+		#for rownum in range(sh.nrows):
+		#	if(not firstline):
+		#		query = "INSERT INTO "+shname+"("
+		#		for i in namecol:
+		#			query+=i+','
+		#		query=query[:-1]
+		#		query+=") VALUES("				
 
-				for rowval in sh.row_values(rownum):
-					if ("'" in rowval):
-						index = rowval.find("'")
-						rowval=rowval[:index]+"'"+rowval[index:]
-					query+="'"+rowval+"'"+","
-				query=query[:-1]
-				query+=')'
-				f.write('\ndb.executesql("'+query.encode('utf8')+'")')
-			else:
-				firstline=False
+		#		for rowval in sh.row_values(rownum):
+		#			if ("'" in rowval):
+		#				index = rowval.find("'")
+		#				rowval=rowval[:index]+"'"+rowval[index:]
+		#			query+="'"+rowval+"'"+","
+		#		query=query[:-1]
+		#		query+=')'
+		#		f.write('\ndb.executesql("'+query.encode('utf8')+'")')
+		#	else:
+		#		firstline=False
 
 		
 	#with open("/home/tanguyl/Documents/projetPython/web2py/applications/TEMPLATE/models/db.py","r") as f:
