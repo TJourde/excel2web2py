@@ -88,7 +88,7 @@ def requestCreateTable(name,namecols):
 	s+=')'
 	return s
 
-def requestInsertRowsData(nameTable,sheet):
+def insertRowsData(nameTable,sheet,cursor):
 
 	query = ""
 	idcpt = 0
@@ -104,7 +104,7 @@ def requestInsertRowsData(nameTable,sheet):
 			idcpt+=1
 		else:
 			firstline=False
-	return query
+		cursor.execute(query)
 
 
 #if there is at least an argument, the script is launched
@@ -139,7 +139,7 @@ if( len(sys.argv)>1 ):
 	c.execute(requestCreateTable(shname,namecols))
 
 	# Insert rows of data
-	c.execute(requestInsertRowsData(shname,sh))
+	insertRowsData(shname,sh,c)
 
 	# Save (commit) the changes
 	conn.commit()
