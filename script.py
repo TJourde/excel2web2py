@@ -9,7 +9,7 @@ import subprocess
 
 
 
-def creationDossier():
+def createFolder():
 	localtime = time.localtime(time.time()) #heure machine
 	timedate = str(localtime[0])+'_'+str(localtime[1])+'_'+str(localtime[2])
 	if os.name =="nt":
@@ -25,35 +25,45 @@ def creationDossier():
 		return path
 	#os.chdir(path) # change de répertoire courant
 
-#if there is at least an argument, the script is launched
-if( len(sys.argv)>1 ):
-	
-	if(" " in sys.argv[1]):
+def fileWellFormatted(pathFile):
+	if(" " in pathFile):
 		sys.exit("Erreur: le nom du fichier contient des espaces")
 
 	try:
-		sys.argv[1].encode('ascii')
+		pathFile.encode('ascii')
 	
 	except (UnicodeError):
 		sys.exit("Erreur: le nom du fichier n'est pas unicode")
 
+def tryOpenWorkbookFile(pathFile):
 	try:
 		#workbook doesn't need to be explicitly closed
-		wb = xlrd.open_workbook(sys.argv[1])
+		wb = xlrd.open_workbook(pathFile)
+		return wb
 	except(IOError):
 		sys.exit("Erreur: le fichier n'a pas pu être consulté")
 
+def getSheet(wb):
+	sh = wb.sheet_by_name(wb.sheet_names()[0])
+	return sh
+
+def getSheetName(sh):
+	return getattr(sh,"name")
+
+def getNameFirstSheetAsTableName(wb):
 	# get name of first sheet
 	try:
 		wb.sheet_names()[0].encode('ascii')
 	
 	except (UnicodeError):
 		sys.exit("Erreur: le nom de la feuille n'est pas unicode")
-	sh = wb.sheet_by_name(wb.sheet_names()[0])
+	
 	shname = wb.sheet_names()[0].replace(" ","_").replace("(","").replace(")","")
+	return shname
 
+def getColumnsNames(sheet,shname):
 	# get names of columns (1st row value)
-	namecol = []
+	namecols = []
 
 	for colnum in range(sh.ncols):
 		try:#necessary or else db attributes will look funny 
@@ -62,16 +72,51 @@ if( len(sys.argv)>1 ):
 		except (UnicodeError):
 			sys.exit(sh.col_values(colnum)[0]+"Erreur: Nom de colonne n'est pas unicode")
 
-		namecol.append(sh.col_values(colnum)[0].replace(" ","_").replace("(","").replace(")",""))
+		namecols.append(sh.col_values(colnum)[0].replace(" ","_").replace("(","").replace(")",""))
 
 	print("Sheet: "+ shname)
-	for i in namecol:
+	for i in namecols:
 		print("Column: "+i)
 
+	return namecols
 
-	#erase old db
+def requestCreateTable(name,namecols):
+	s ='CREATE TABLE "'+ shname+'"(id,'
+	for i in namecols:
+		s+='"'+i+'",'
+	s=s[:-1]
+	s+=')'
+	return s
 
-	path=str(creationDossier())
+def requestInsertRowsData(nameTable,sheet):
+
+	query = ""
+	idcpt = 0
+	firstline=True
+	for rownum in range(sheet.nrows):
+		if(not firstline):
+			query = "INSERT INTO "+nameTable+" VALUES ("+str(idcpt)+","
+			for rowval in sheet.row_values(rownum):
+				#if ((rowval != "")and(not rowval.isspace())):
+				query+='"'+rowval+'"'+','
+			query=query[:-1]
+			query+=')'
+			idcpt+=1
+		else:
+			firstline=False
+	return query
+
+
+#if there is at least an argument, the script is launched
+if( len(sys.argv)>1 ):
+	
+	fileWellFormatted(sys.argv[1])
+	wb = tryOpenWorkbookFile(sys.argv[1])
+	sh = getSheet(wb)
+	shname = getNameFirstSheetAsTableName(wb)
+	namecols= getColumnsNames(sh,shname)
+	path=str(createFolder())
+
 	if(os.path.isdir(path)):
 		if(os.path.isfile(path+sys.argv[1].split('.')[0]+".db")):
 			os.remove(path+sys.argv[1].split('.')[0]+".db")
@@ -80,36 +125,22 @@ if( len(sys.argv)>1 ):
 	#db
 	print ("Path: "+path)
 	#print("Db :"+str(path)+sys.argv[1].split('.')[0]+".db")
-	conn = sqlite3.connect("web2py/applications/TEMPLATE/databases/storage.sqlite")#path+sys.argv[1].split('.')[0]+".db")
+	conn = sqlite3.connect("web2py/applications/TEMPLATE/databases/storage.sqlite")
+	#path+sys.argv[1].split('.')[0]+".db")
 	c = conn.cursor()
 
 	#Remove old table
-	c.execute("DROP TABLE "+shname)
+	try:
+		c.execute("DROP TABLE "+shname)
+	except:
+		pass
 
-	# Create table
-	s ='CREATE TABLE "'+ shname+'"(id,'
-	for i in namecol:
-		s+='"'+i+'",'
-	s=s[:-1]
-	s+=')'
-	c.execute(s)
+	#Create table
+	c.execute(requestCreateTable(shname,namecols))
 
 	# Insert rows of data
-	query = ""
-	idcpt = 0
-	firstline=True
-	for rownum in range(sh.nrows):
-		if(not firstline):
-			query = "INSERT INTO "+shname+" VALUES ("+str(idcpt)+","
-			for rowval in sh.row_values(rownum):
-				#if ((rowval != "")and(not rowval.isspace())):
-				query+='"'+rowval+'"'+','
-			query=query[:-1]
-			query+=')'
-			c.execute(query)
-			idcpt+=1
-		else:
-			firstline=False
+	c.execute(requestInsertRowsData(shname,sh))
+
 	# Save (commit) the changes
 	conn.commit()
 
@@ -138,7 +169,7 @@ if( len(sys.argv)>1 ):
 		#Create table
 		#f.write('\ndb.define_table("'+shname+'"')
 		
-		#for i in namecol:
+		#for i in namecols:
 		#	f.write(',Field("'+i.encode('utf8')+'")')
 		#f.write(')')
 
@@ -147,7 +178,7 @@ if( len(sys.argv)>1 ):
 		#for rownum in range(sh.nrows):
 		#	if(not firstline):
 		#		query = "INSERT INTO "+shname+"("
-		#		for i in namecol:
+		#		for i in namecols:
 		#			query+=i+','
 		#		query=query[:-1]
 		#		query+=") VALUES("				
