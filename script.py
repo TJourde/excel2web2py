@@ -7,9 +7,9 @@ import sqlite3
 import xlrd
 import subprocess
 
-path=""
 
-def creationDossier(path):
+
+def creationDossier():
 	localtime = time.localtime(time.time()) #heure machine
 	timedate = str(localtime[0])+'_'+str(localtime[1])+'_'+str(localtime[2])
 	if os.name =="nt":
@@ -21,6 +21,8 @@ def creationDossier(path):
 	except OSError as exception:
 		if exception.errno != errno.EEXIST:
 			raise
+	finally:
+		return path
 	#os.chdir(path) # change de répertoire courant
 
 #if there is at least an argument, the script is launched
@@ -68,7 +70,8 @@ if( len(sys.argv)>1 ):
 
 
 	#erase old db
-	apply(creationDossier,path)
+
+	path=str(creationDossier())
 	if(os.path.isdir(path)):
 		if(os.path.isfile(path+sys.argv[1].split('.')[0]+".db")):
 			os.remove(path+sys.argv[1].split('.')[0]+".db")
@@ -97,7 +100,7 @@ if( len(sys.argv)>1 ):
 	firstline=True
 	for rownum in range(sh.nrows):
 		if(not firstline):
-			query = "INSERT INTO "+shname+" VALUES ("+idcpt
+			query = "INSERT INTO "+shname+" VALUES ("+str(idcpt)+","
 			for rowval in sh.row_values(rownum):
 				#if ((rowval != "")and(not rowval.isspace())):
 				query+='"'+rowval+'"'+','
@@ -116,7 +119,7 @@ if( len(sys.argv)>1 ):
 	#var a creer : logs/log	
 
 	from subprocess import call
-	subprocess.call(["rm","-R","web2py/applications/TEMPLATE/tmp/"])
+	#subprocess.call(["rm","-R","web2py/applications/TEMPLATE/tmp/"])
 	try:
 		subprocess.check_call(["cp","-R", path+'.',"web2py/applications/TEMPLATE/tmp/"])
 	except subprocess.CalledProcessError:
@@ -127,11 +130,11 @@ if( len(sys.argv)>1 ):
 	except subprocess.CalledProcessError:
 		sys.exit("db_backup n'est plus présent")	
 
-	#with open("web2py/applications/TEMPLATE/models/db.py","a") as f:
+	with open("web2py/applications/TEMPLATE/models/db.py","a") as f:
 		#getDb -> called from default.py to get the same db as db.py
-		#f.write('\ndef getDb():\n    module_path=os.path.abspath(os.path.dirname(__file__))\n    dbpath = module_path + "/../databases"\n    db_name = "storage.sqlite"\n    db = DAL("sqlite://"+ db_name ,folder=dbpath, auto_import=True)\n    return db')
+		f.write('\ndef getDb():\n    module_path=os.path.abspath(os.path.dirname(__file__))\n    dbpath = module_path + "/../databases"\n    db_name = "storage.sqlite"\n    db = DAL("sqlite://"+ db_name ,folder=dbpath, auto_import=True)\n    return db')
 		#getTable -> called from default.py to get the table generated
-		#f.write('\ndef getTable(db):\n    return db.'+shname)
+		f.write('\ndef getTable(db):\n    return db.'+shname)
 		#Create table
 		#f.write('\ndb.define_table("'+shname+'"')
 		
