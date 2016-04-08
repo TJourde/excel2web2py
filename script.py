@@ -84,7 +84,7 @@ if( len(sys.argv)>1 ):
 	c.execute("DROP TABLE "+shname)
 
 	# Create table
-	s ='CREATE TABLE "'+ shname+'"('
+	s ='CREATE TABLE "'+ shname+'"(id,'
 	for i in namecol:
 		s+='"'+i+'",'
 	s=s[:-1]
@@ -93,16 +93,18 @@ if( len(sys.argv)>1 ):
 
 	# Insert rows of data
 	query = ""
+	idcpt = 0
 	firstline=True
 	for rownum in range(sh.nrows):
 		if(not firstline):
-			query = "INSERT INTO "+shname+" VALUES ("
+			query = "INSERT INTO "+shname+" VALUES ("+idcpt
 			for rowval in sh.row_values(rownum):
 				#if ((rowval != "")and(not rowval.isspace())):
 				query+='"'+rowval+'"'+','
 			query=query[:-1]
 			query+=')'
 			c.execute(query)
+			idcpt+=1
 		else:
 			firstline=False
 	# Save (commit) the changes
