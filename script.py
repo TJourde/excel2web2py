@@ -3,11 +3,26 @@
 import sys, os, time, errno
 import os.path
 import sqlite3
+import logging
+#passing var
+import pickle
 #lib read excel files
 import xlrd
 import subprocess
 
+def sendVars(sh,namecols):
+	list =[]
+	list.append(sh)
+	list.append(namecols)
+	pickle.dump(list,sys.stdout)
 
+def createLogs(zepath):
+	localtime = time.localtime(time.time()) #heure machine
+	timeh =  str(localtime[3])+'_'+str(localtime[4])+'_'+str(localtime[5])
+	logpath = str(zepath)+"Log_"+timeh+".log"
+	logging.basicConfig(filename=logpath,level=logging.DEBUG)
+	logging.debug('Log :'+timeh)	
+	return logpath
 
 def createFolder():
 	localtime = time.localtime(time.time()) #heure machine
@@ -18,6 +33,7 @@ def createFolder():
 		path="/tmp/"+timedate+'/'
 	try:
 		os.makedirs(path)
+		
 	except OSError as exception:
 		if exception.errno != errno.EEXIST:
 			raise
@@ -65,14 +81,14 @@ def getColumnsNames(sheet,shname):
 	# get names of columns (1st row value)
 	namecols = []
 
-	for colnum in range(sh.ncols):
+	for colnum in range(sheet.ncols):
 		try:#necessary or else db attributes will look funny 
-			sh.col_values(colnum)[0].encode('ascii')
+			sheet.col_values(colnum)[0].encode('ascii')
 	
 		except (UnicodeError):
-			sys.exit(sh.col_values(colnum)[0]+"Erreur: Nom de colonne n'est pas unicode")
+			sys.exit(sheet.col_values(colnum)[0]+"Erreur: Nom de colonne n'est pas unicode")
 
-		namecols.append(sh.col_values(colnum)[0].replace(" ","_").replace("(","").replace(")",""))
+		namecols.append(sheet.col_values(colnum)[0].replace(" ","_").replace("(","").replace(")",""))
 
 	print("Sheet: "+ shname)
 	for i in namecols:
@@ -89,7 +105,6 @@ def requestCreateTable(name,namecols):
 	return s
 
 def insertRowsData(nameTable,sheet,cursor):
-
 	query = ""
 	idcpt = 0
 	firstline=True
@@ -107,122 +122,114 @@ def insertRowsData(nameTable,sheet,cursor):
 		try:
 			cursor.execute(query)
 		except:
-			sys.exit("Erreur insertion")
+			pass			
+			#sys.exit("Erreur insertion")
 
-path=str(createFolder())
-#if there is at least an argument, the script is launched
-if( len(sys.argv)>1 ):
+#prevent execution on import
+if __name__ == '__main__':
+	path=str(createFolder())
+	logpath = str(createLogs(path))
+	my_logger = logging.getLogger('MyLogger')
+	my_logger.setLevel(logging.DEBUG)
+	#if there is at least an argument, the script is launched
+	if( len(sys.argv)>1 ):
 	
-	fileWellFormatted(sys.argv[1])
-	wb = tryOpenWorkbookFile(sys.argv[1])
-	sh = getSheet(wb)
-	shname = getNameFirstSheetAsTableName(wb)
-	namecols= getColumnsNames(sh,shname)
+		fileWellFormatted(sys.argv[1])
+		wb = tryOpenWorkbookFile(sys.argv[1])
+		sh = getSheet(wb)
+		shname = getNameFirstSheetAsTableName(wb)
+		namecols= getColumnsNames(sh,shname)
 	
 
-	#if(os.path.isdir(path)):
-	#	if(os.path.isfile(path+sys.argv[1].split('.')[0]+".db")):
-	#		os.remove(path+sys.argv[1].split('.')[0]+".db")
+		#if(os.path.isdir(path)):
+		#	if(os.path.isfile(path+sys.argv[1].split('.')[0]+".db")):
+		#		os.remove(path+sys.argv[1].split('.')[0]+".db")
 	
-	#db
-	print ("Path: "+path)
-	#print("Db :"+str(path)+sys.argv[1].split('.')[0]+".db")
-	conn = sqlite3.connect("web2py/applications/TEMPLATE/databases/storage.sqlite")
-	#path+sys.argv[1].split('.')[0]+".db")
-	c = conn.cursor()
+		#db
+		#print ("Path: "+path)
+		#print("Db :"+str(path)+sys.argv[1].split('.')[0]+".db")
+		#conn = sqlite3.connect("web2py/applications/TEMPLATE/databases/storage.sqlite")
+		#path+sys.argv[1].split('.')[0]+".db")
+		#c = conn.cursor()
 
-	#Remove old table
-	#try:
-	#	c.execute("DROP TABLE IF EXISTS "+shname)
-	#	print("db effacée")
-	#except:
-		#sys.exit("db not removed")
-	#	pass
-
-	#Create table
-	#try:
-	#	c.execute(requestCreateTable(shname,namecols))
-	#except:
-	#	sys.exit('Probleme de creation')
-
-	# Insert rows of data
-	#insertRowsData(shname,sh,c)
-
-	# Save (commit) the changes
-	conn.commit()
-
-	# We can also close the connection if we are done with it.
-	# Just be sure any changes have been committed or they will be lost.
-	conn.close()
-	#var a creer : logs/log	
-
-	from subprocess import call
-	#subprocess.call(["rm","-R","web2py/applications/TEMPLATE/tmp/"])
-	#try:
-	#	subprocess.check_call(["cp","-R", path+'.',"web2py/applications/TEMPLATE/tmp/"])
-	#except subprocess.CalledProcessError:
-	#	sys.exit("Erreur: "+path+", web2py ou un de ses dossiers a disparu de l'emplacement prévu")
-
-	try:
-		subprocess.check_call(["cp","web2py/applications/TEMPLATE/models/db_backup.py","web2py/applications/TEMPLATE/models/db.py"])
-	except subprocess.CalledProcessError:
-		sys.exit("db_backup n'est plus présent")	
-
-	with open("web2py/applications/TEMPLATE/models/db.py","a") as f:
-		#Drop table
-		f.write('\ntry:\n    db.'+shname+'.drop()\nexcept:\n    pass')
+		#Remove old table
+		#try:
+		#	c.execute("DROP TABLE IF EXISTS "+shname)
+		#	print("db effacée")
+		#except:
+			#sys.exit("db not removed")
+		#	pass
 
 		#Create table
-		f.write('\ndb.define_table("'+shname+'"')
-		
-		for i in namecols:
-			f.write(',Field("'+i.encode('utf8')+'")')
-		f.write(')')
+		#try:
+		#	c.execute(requestCreateTable(shname,namecols))
+		#except:
+		#	sys.exit('Probleme de creation')
 
-		#getDb -> called from default.py to get the same db as db.py
-		f.write('\ndef getDb():\n    module_path=os.path.abspath(os.path.dirname(__file__))\n    dbpath = module_path + "/../databases"\n    db_name = "storage.sqlite"\n    db = DAL("sqlite://"+ db_name ,folder=dbpath, auto_import=True)\n    return db')
-		#getTable -> called from default.py to get the table generated
-		f.write('\ndef getTable(db):\n    return db.'+shname)
-
-
-		
-	try:
-		subprocess.check_call(["cp","web2py/applications/TEMPLATE/controllers/default_backup.py","web2py/applications/TEMPLATE/controllers/default.py"])
-	except subprocess.CalledProcessError:
-		sys.exit("default_backup n'est plus présent")
-
-	with open("web2py/applications/TEMPLATE/controllers/default.py","a") as f:
-		f.write('def initData():')
 		# Insert rows of data
-		firstline=True
-		for rownum in range(sh.nrows):
-			if(not firstline):
-				query = "INSERT INTO "+shname+"("
-				for i in namecols:
-					query+=i+','
-				query=query[:-1]
-				query+=") VALUES("				
+		#insertRowsData(shname,sh,c)
 
-				for rowval in sh.row_values(rownum):
-					if ("'" in rowval):
-						index = rowval.find("'")
-						rowval=rowval[:index]+"'"+rowval[index:]
-					query+="'"+rowval+"'"+","
-				query=query[:-1]
-				query+=')'
-				f.write('\n    db.executesql("'+query.encode('utf8')+'")')
-			else:
-				firstline=False
+		# Save (commit) the changes
+		#conn.commit()
+
+		# We can also close the connection if we are done with it.
+		# Just be sure any changes have been committed or they will be lost.
+		#conn.close()
+		#var a creer : logs/log	
+
+		from subprocess import call
+		#subprocess.call(["rm","-R","web2py/applications/TEMPLATE/tmp/"])
+		#try:
+		#	subprocess.check_call(["cp","-R", path+'.',"web2py/applications/TEMPLATE/tmp/"])
+		#except subprocess.CalledProcessError:
+		#	sys.exit("Erreur: "+path+", web2py ou un de ses dossiers a disparu de l'emplacement prévu")
+
+		try:
+			subprocess.check_call(["cp","web2py/applications/TEMPLATE/models/db_backup.py","web2py/applications/TEMPLATE/models/db.py"])
+		except subprocess.CalledProcessError:
+			sys.exit("db_backup n'est plus présent")	
+
+		with open("web2py/applications/TEMPLATE/models/db.py","a") as f:
+			#Drop table
+			#f.write('\ntry:\n    db.'+shname+'.drop()\nexcept:\n    pass')
+
+			#Create table
+			f.write('\ndb.define_table("'+shname+'"')
+		
+			for i in namecols:
+				f.write(',Field("'+i.encode('utf8')+'")')
+			f.write(')')
+
+			#getDb -> called from default.py to get the same db as db.py
+			f.write('\ndef getDb():\n    module_path=os.path.abspath(os.path.dirname(__file__))\n    dbpath = module_path + "/../databases"\n    db_name = "storage.sqlite"\n    db = DAL("sqlite://"+ db_name ,folder=dbpath, auto_import=True)\n    return db')
+			#getTable -> called from default.py to get the table generated
+			f.write('\ndef getTable(db):\n    return db.'+shname)
 
 
-	try:
-		subprocess.check_call(["python", "web2py/web2py.py"])
+		#Insert Rows
+		try:
+			subprocess.check_call(["cp","web2py/applications/TEMPLATE/controllers/default_backup.py","web2py/applications/TEMPLATE/controllers/default.py"])
+		except subprocess.CalledProcessError:
+			sys.exit("default_backup n'est plus présent")
 
-	except subprocess.CalledProcessError:
-		sys.exit("Erreur: python n'est pas présent sur la machine ou web2py a changé d'emplacement")
+		#passing vars
+		#sendVars(sh,namecols)
+		#used for calling scriptInit once page has loaded
+		with open("web2py/applications/TEMPLATE/controllers/default.py","a") as f:
+			f.write('def initData():')
+			f.write('\n    from subprocess import check_call')
+			script_path=os.path.abspath(os.path.dirname(__file__))
+			f.write('\n    try:\n        subprocess.check_call(["python",'+'"'+str(script_path)+"/scriptInit.py"+'","'+str(script_path)+"/"+sys.argv[1]+'"'+"])")
+			f.write('\n    except subprocess.CalledProcessError:\n        sys.exit("Une erreur vient de se produire : scriptInit.py est-il présent?")')
+		
+		try:
+			subprocess.check_call(["python", "web2py/web2py.py"])
+
+		except subprocess.CalledProcessError:
+			sys.exit("Erreur: python n'est pas présent sur la machine ou web2py a changé d'emplacement")
 
 
-else:
-	print("Erreur : pas de fichier sélectionné")
+	else:
+		print("Erreur : pas de fichier sélectionné")
 
 
