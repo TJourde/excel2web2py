@@ -104,7 +104,10 @@ def insertRowsData(nameTable,sheet,cursor):
 			idcpt+=1
 		else:
 			firstline=False
-		cursor.execute(query)
+		try:
+			cursor.execute(query)
+		except:
+			sys.exit("Erreur insertion")
 
 path=str(createFolder())
 #if there is at least an argument, the script is launched
@@ -129,16 +132,21 @@ if( len(sys.argv)>1 ):
 	c = conn.cursor()
 
 	#Remove old table
-	try:
-		c.execute("DROP TABLE "+shname)
-	except:
-		pass
+	#try:
+	#	c.execute("DROP TABLE IF EXISTS "+shname)
+	#	print("db effacée")
+	#except:
+		#sys.exit("db not removed")
+	#	pass
 
 	#Create table
-	c.execute(requestCreateTable(shname,namecols))
+	#try:
+	#	c.execute(requestCreateTable(shname,namecols))
+	#except:
+	#	sys.exit('Probleme de creation')
 
 	# Insert rows of data
-	insertRowsData(shname,sh,c)
+	#insertRowsData(shname,sh,c)
 
 	# Save (commit) the changes
 	conn.commit()
@@ -150,10 +158,10 @@ if( len(sys.argv)>1 ):
 
 	from subprocess import call
 	#subprocess.call(["rm","-R","web2py/applications/TEMPLATE/tmp/"])
-	try:
-		subprocess.check_call(["cp","-R", path+'.',"web2py/applications/TEMPLATE/tmp/"])
-	except subprocess.CalledProcessError:
-		sys.exit("Erreur: "+path+", web2py ou un de ses dossiers a disparu de l'emplacement prévu")
+	#try:
+	#	subprocess.check_call(["cp","-R", path+'.',"web2py/applications/TEMPLATE/tmp/"])
+	#except subprocess.CalledProcessError:
+	#	sys.exit("Erreur: "+path+", web2py ou un de ses dossiers a disparu de l'emplacement prévu")
 
 	try:
 		subprocess.check_call(["cp","web2py/applications/TEMPLATE/models/db_backup.py","web2py/applications/TEMPLATE/models/db.py"])
@@ -161,41 +169,50 @@ if( len(sys.argv)>1 ):
 		sys.exit("db_backup n'est plus présent")	
 
 	with open("web2py/applications/TEMPLATE/models/db.py","a") as f:
+		#Drop table
+		f.write('\ntry:\n    db.'+shname+'.drop()\nexcept:\n    pass')
+
+		#Create table
+		f.write('\ndb.define_table("'+shname+'"')
+		
+		for i in namecols:
+			f.write(',Field("'+i.encode('utf8')+'")')
+		f.write(')')
+
 		#getDb -> called from default.py to get the same db as db.py
 		f.write('\ndef getDb():\n    module_path=os.path.abspath(os.path.dirname(__file__))\n    dbpath = module_path + "/../databases"\n    db_name = "storage.sqlite"\n    db = DAL("sqlite://"+ db_name ,folder=dbpath, auto_import=True)\n    return db')
 		#getTable -> called from default.py to get the table generated
 		f.write('\ndef getTable(db):\n    return db.'+shname)
-		#Create table
-		#f.write('\ndb.define_table("'+shname+'"')
-		
-		#for i in namecols:
-		#	f.write(',Field("'+i.encode('utf8')+'")')
-		#f.write(')')
 
+
+		
+	try:
+		subprocess.check_call(["cp","web2py/applications/TEMPLATE/controllers/default_backup.py","web2py/applications/TEMPLATE/controllers/default.py"])
+	except subprocess.CalledProcessError:
+		sys.exit("default_backup n'est plus présent")
+
+	with open("web2py/applications/TEMPLATE/controllers/default.py","a") as f:
+		f.write('def initData():')
 		# Insert rows of data
-		#firstline=True
-		#for rownum in range(sh.nrows):
-		#	if(not firstline):
-		#		query = "INSERT INTO "+shname+"("
-		#		for i in namecols:
-		#			query+=i+','
-		#		query=query[:-1]
-		#		query+=") VALUES("				
+		firstline=True
+		for rownum in range(sh.nrows):
+			if(not firstline):
+				query = "INSERT INTO "+shname+"("
+				for i in namecols:
+					query+=i+','
+				query=query[:-1]
+				query+=") VALUES("				
 
-		#		for rowval in sh.row_values(rownum):
-		#			if ("'" in rowval):
-		#				index = rowval.find("'")
-		#				rowval=rowval[:index]+"'"+rowval[index:]
-		#			query+="'"+rowval+"'"+","
-		#		query=query[:-1]
-		#		query+=')'
-		#		f.write('\ndb.executesql("'+query.encode('utf8')+'")')
-		#	else:
-		#		firstline=False
-
-		
-	#with open("/home/tanguyl/Documents/projetPython/web2py/applications/TEMPLATE/models/db.py","r") as f:
-	#	print(f.read())
+				for rowval in sh.row_values(rownum):
+					if ("'" in rowval):
+						index = rowval.find("'")
+						rowval=rowval[:index]+"'"+rowval[index:]
+					query+="'"+rowval+"'"+","
+				query=query[:-1]
+				query+=')'
+				f.write('\n    db.executesql("'+query.encode('utf8')+'")')
+			else:
+				firstline=False
 
 
 	try:
