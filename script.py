@@ -19,12 +19,15 @@ def sendVars(sh,namecols):
 def getStoragePath():
 	return str(os.path.abspath(os.path.dirname(__file__)))+"/web2py/applications/TEMPLATE/databases/storage.sqlite"
 
+def getTimeH():
+	localtime = time.localtime(time.time()) #heure machine
+	timeh =  str(localtime[3])+'_'+str(localtime[4])+'_'+str(localtime[5])
+	return timeh
+
 def createLogs(zepath):
 	localtime = time.localtime(time.time()) #heure machine
 	timeh =  str(localtime[3])+'_'+str(localtime[4])+'_'+str(localtime[5])
-	logpath = str(zepath)+"Log_"+timeh+".log"
-	logging.basicConfig(filename=logpath,level=logging.DEBUG)
-	logging.debug('Log :'+timeh)	
+	logpath = str(zepath)+"Log_"+timeh+".log"	
 	return logpath
 
 def createFolder():
@@ -94,7 +97,7 @@ def getColumnsNames(sheet,shname):
 		namecols.append(sheet.col_values(colnum)[0].replace(" ","_").replace("(","").replace(")",""))
 
 	#print("Sheet: "+ shname)
-	for i in namecols:
+	#for i in namecols:
 		#print("Column: "+i)
 
 	return namecols
@@ -130,18 +133,32 @@ def insertRowsData(nameTable,sheet,cursor):
 
 #prevent execution on import
 if __name__ == '__main__':
+	script_path=os.path.abspath(os.path.dirname(__file__))
 	path=str(createFolder())
 	logpath = str(createLogs(path))
-	my_logger = logging.getLogger('MyLogger')
-	my_logger.setLevel(logging.DEBUG)
+	print ("Consult log file at"+logpath)
+	logging.basicConfig(filename=logpath,level=logging.DEBUG)
+	logging.info('Log created at :'+getTimeH())
+	logging.info("script.py is executed")
+	logging.info("Looking for the file in argument")
 	#if there is at least an argument, the script is launched
 	if( len(sys.argv)>1 ):
-	
+		logging.info("File found")
+		logging.info("Checking if file is well formatted")
 		fileWellFormatted(sys.argv[1])
+		logging.info("File is well formatted")
+		logging.info("Trying to open file")
 		wb = tryOpenWorkbookFile(sys.argv[1])
+		logging.info("Successfully opened the file")
+		logging.info("Trying to get sheet")
 		sh = getSheet(wb)
+		logging.info("Successfully opened the sheet")
+		logging.info("Trying to the name of the sheet")
 		shname = getNameFirstSheetAsTableName(wb)
+		logging.info("Successfully retrived the name of the sheet")
+		logging.info("Trying to the names of the columns")
 		namecols= getColumnsNames(sh,shname)
+		logging.info("Successfully retrieved the name of the columns")
 	
 
 		#if(os.path.isdir(path)):
@@ -188,11 +205,15 @@ if __name__ == '__main__':
 		#	sys.exit("Erreur: "+path+", web2py ou un de ses dossiers a disparu de l'emplacement prévu")
 
 		try:
+			logging.info("Trying to recover backup of db")
 			subprocess.check_call(["cp","web2py/applications/TEMPLATE/models/db_backup.py","web2py/applications/TEMPLATE/models/db.py"])
+			logging.info("Successfully recover backup of db")
 		except subprocess.CalledProcessError:
+			logging.exception("Error while retrieving db_backup")
 			sys.exit("db_backup n'est plus présent")	
 
 		with open("web2py/applications/TEMPLATE/models/db.py","a") as f:
+			logging.info("Successfully opened db")
 			#Drop table
 			#f.write('\ntry:\n    db.'+shname+'.drop()\nexcept:\n    pass')
 
@@ -208,27 +229,32 @@ if __name__ == '__main__':
 			#getTable -> called from default.py to get the table generated
 			f.write('\ndef getTable(db):\n    return db.'+shname)
 
-
+		logging.info("Writing in db finished")
 		#Insert Rows
 		try:
+			logging.info("Trying to recover backup of default")
 			subprocess.check_call(["cp","web2py/applications/TEMPLATE/controllers/default_backup.py","web2py/applications/TEMPLATE/controllers/default.py"])
+			logging.info("Successfully recover backup of default")
 		except subprocess.CalledProcessError:
+			logging.exception("Error while retrieving default_backup")
 			sys.exit("default_backup n'est plus présent")
 
 		#passing vars
 		#sendVars(sh,namecols)
 		#used for calling scriptInit once page has loaded
 		with open("web2py/applications/TEMPLATE/controllers/default.py","a") as f:
+			logging.info("Successfully opened default")
 			f.write('def initData():')
 			f.write('\n    from subprocess import check_call')
-			script_path=os.path.abspath(os.path.dirname(__file__))
 			f.write('\n    try:\n        subprocess.check_call(["python",'+'"'+str(script_path)+"/scriptInit.py"+'","'+str(script_path)+"/"+sys.argv[1]+'"'+"])")
 			f.write('\n    except subprocess.CalledProcessError:\n        sys.exit("Une erreur vient de se produire : scriptInit.py est-il présent?")')
 		
 		try:
+			logging.info("Trying to launch web2py")
 			subprocess.check_call(["python", "web2py/web2py.py"])
 
 		except subprocess.CalledProcessError:
+			logging.exception("Error while executing web2py")
 			sys.exit("Erreur: python n'est pas présent sur la machine ou web2py a changé d'emplacement")
 
 
