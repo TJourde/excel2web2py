@@ -16,6 +16,9 @@ def sendVars(sh,namecols):
 	list.append(namecols)
 	pickle.dump(list,sys.stdout)
 
+def getStoragePath():
+	return str(os.path.abspath(os.path.dirname(__file__)))+"/web2py/applications/TEMPLATE/databases/storage.sqlite"
+
 def createLogs(zepath):
 	localtime = time.localtime(time.time()) #heure machine
 	timeh =  str(localtime[3])+'_'+str(localtime[4])+'_'+str(localtime[5])
@@ -90,9 +93,9 @@ def getColumnsNames(sheet,shname):
 
 		namecols.append(sheet.col_values(colnum)[0].replace(" ","_").replace("(","").replace(")",""))
 
-	print("Sheet: "+ shname)
+	#print("Sheet: "+ shname)
 	for i in namecols:
-		print("Column: "+i)
+		#print("Column: "+i)
 
 	return namecols
 
@@ -230,6 +233,6 @@ if __name__ == '__main__':
 
 
 	else:
-		print("Erreur : pas de fichier sélectionné")
+		sys.exit("Erreur : pas de fichier sélectionné")
 
 

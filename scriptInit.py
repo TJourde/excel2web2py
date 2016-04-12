@@ -13,7 +13,7 @@ sh = script.getSheet(wb)
 shname = script.getNameFirstSheetAsTableName(wb)
 namecols= script.getColumnsNames(sh,shname)
 # Insert rows of data
-conn = sqlite3.connect("/home/tanguyl/Documents/projetPython/web2py/applications/TEMPLATE/databases/storage.sqlite")
+conn = sqlite3.connect(script.getStoragePath())
 c = conn.cursor()
 script.insertRowsData(shname,sh,c)
 # Save (commit) the changes
