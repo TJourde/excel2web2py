@@ -65,42 +65,15 @@ def tryOpenWorkbookFile(pathFile):
 	except(IOError):
 		sys.exit("Erreur: le fichier n'a pas pu être consulté")
 
-def getSheet(wb):
-	sh = wb.sheet_by_name(wb.sheet_names()[0])
-	return sh
-
-def getSheetName(sh):
-	return getattr(sh,"name")
-
-def getNameFirstSheetAsTableName(wb):
-	# get name of first sheet
+def getSheetAsTableName(shname):
 	try:
-		wb.sheet_names()[0].encode('ascii')
+		shname.encode('ascii')
 	
 	except (UnicodeError):
 		sys.exit("Erreur: le nom de la feuille n'est pas unicode")
 	
-	shname = wb.sheet_names()[0].replace(" ","_").replace("(","").replace(")","")
-	return shname
-
-def getColumnsNames(sheet,shname):
-	# get names of columns (1st row value)
-	namecols = []
-
-	for colnum in range(sheet.ncols):
-		try:#necessary or else db attributes will look funny 
-			sheet.col_values(colnum)[0].encode('ascii')
-	
-		except (UnicodeError):
-			sys.exit(sheet.col_values(colnum)[0]+"Erreur: Nom de colonne n'est pas unicode")
-
-		namecols.append(sheet.col_values(colnum)[0].replace(" ","_").replace("(","").replace(")",""))
-
-	#print("Sheet: "+ shname)
-	#for i in namecols:
-		#print("Column: "+i)
-
-	return namecols
+	newshname = shname.replace(" ","_").replace("(","").replace(")","")
+	return newshname
 
 def requestCreateTable(name,namecols):
 	s ='CREATE TABLE "'+ shname+'"(id,'
@@ -126,10 +99,29 @@ def insertRowsData(nameTable,sheet,cursor):
 		else:
 			firstline=False
 		try:
+			print query
 			cursor.execute(query)
 		except:
 			pass			
 			#sys.exit("Erreur insertion")
+
+def getColumns(sheet):
+	# get names of columns (1st row value)
+	namecols = []
+
+	for colnum in range(sheet.ncols):
+		try:#necessary or else db attributes will look funny 
+			sheet.col_values(colnum)[0].encode('ascii')
+			nc = sheet.col_values(colnum)[0].split('|')
+			i = 0
+			while i < len(nc):
+				nc[i] = nc[i].replace(" ","_").replace("(","").replace(")","")
+				i+=1
+			namecols.append(nc)
+	
+		except (UnicodeError):
+			sys.exit(sheet.col_values(colnum)[0]+"Erreur: Nom de colonne n'est pas unicode")
+	return namecols
 
 #prevent execution on import
 if __name__ == '__main__':
@@ -150,60 +142,16 @@ if __name__ == '__main__':
 		logging.info("Trying to open file")
 		wb = tryOpenWorkbookFile(sys.argv[1])
 		logging.info("Successfully opened the file")
-		logging.info("Trying to get sheet")
-		sh = getSheet(wb)
-		logging.info("Successfully opened the sheet")
-		logging.info("Trying to the name of the sheet")
-		shname = getNameFirstSheetAsTableName(wb)
-		logging.info("Successfully retrived the name of the sheet")
-		logging.info("Trying to the names of the columns")
-		namecols= getColumnsNames(sh,shname)
+		logging.info("Trying to get sheets & names")
+		allshnames = wb.sheet_names()
+		allsheets = wb.sheets()
+		logging.info("Successfully opened the sheets")
+		logging.info("Trying to retrieve the names of the columns of each sheets")
+		allcolumns = []
+		for i in allsheets:
+			allcolumns.append(getColumns(i))
 		logging.info("Successfully retrieved the name of the columns")
 	
-
-		#if(os.path.isdir(path)):
-		#	if(os.path.isfile(path+sys.argv[1].split('.')[0]+".db")):
-		#		os.remove(path+sys.argv[1].split('.')[0]+".db")
-	
-		#db
-		#print ("Path: "+path)
-		#print("Db :"+str(path)+sys.argv[1].split('.')[0]+".db")
-		#conn = sqlite3.connect("web2py/applications/TEMPLATE/databases/storage.sqlite")
-		#path+sys.argv[1].split('.')[0]+".db")
-		#c = conn.cursor()
-
-		#Remove old table
-		#try:
-		#	c.execute("DROP TABLE IF EXISTS "+shname)
-		#	print("db effacée")
-		#except:
-			#sys.exit("db not removed")
-		#	pass
-
-		#Create table
-		#try:
-		#	c.execute(requestCreateTable(shname,namecols))
-		#except:
-		#	sys.exit('Probleme de creation')
-
-		# Insert rows of data
-		#insertRowsData(shname,sh,c)
-
-		# Save (commit) the changes
-		#conn.commit()
-
-		# We can also close the connection if we are done with it.
-		# Just be sure any changes have been committed or they will be lost.
-		#conn.close()
-		#var a creer : logs/log	
-
-		from subprocess import call
-		#subprocess.call(["rm","-R","web2py/applications/TEMPLATE/tmp/"])
-		#try:
-		#	subprocess.check_call(["cp","-R", path+'.',"web2py/applications/TEMPLATE/tmp/"])
-		#except subprocess.CalledProcessError:
-		#	sys.exit("Erreur: "+path+", web2py ou un de ses dossiers a disparu de l'emplacement prévu")
-
 		try:
 			logging.info("Trying to recover backup of db")
 			subprocess.check_call(["cp","web2py/applications/TEMPLATE/models/db_backup.py","web2py/applications/TEMPLATE/models/db.py"])
@@ -214,20 +162,22 @@ if __name__ == '__main__':
 
 		with open("web2py/applications/TEMPLATE/models/db.py","a") as f:
 			logging.info("Successfully opened db")
-			#Drop table
-			#f.write('\ntry:\n    db.'+shname+'.drop()\nexcept:\n    pass')
-
-			#Create table
-			f.write('\ndb.define_table("'+shname+'"')
-		
-			for i in namecols:
-				f.write(',Field("'+i.encode('utf8')+'")')
-			f.write(')')
+			logging.info("Creating tables")
+			cptC = 0
+			for i in allshnames:
+				f.write('\ndb.define_table("'+getSheetAsTableName(i)+'"')
+				for j in allcolumns[cptC]:
+					f.write(',Field("'+j[0].encode('utf8')+'"')
+					for h in j[+1:]:
+						f.write(","+h.encode('utf8'))
+					f.write(')')
+				cptC += 1
+				f.write(')')
 
 			#getDb -> called from default.py to get the same db as db.py
 			f.write('\ndef getDb():\n    module_path=os.path.abspath(os.path.dirname(__file__))\n    dbpath = module_path + "/../databases"\n    db_name = "storage.sqlite"\n    db = DAL("sqlite://"+ db_name ,folder=dbpath, auto_import=True)\n    return db')
 			#getTable -> called from default.py to get the table generated
-			f.write('\ndef getTable(db):\n    return db.'+shname)
+			f.write('\ndef getTable(db):\n    return db.'+getSheetAsTableName(allshnames[0]))
 
 		logging.info("Writing in db finished")
 		#Insert Rows
@@ -239,8 +189,6 @@ if __name__ == '__main__':
 			logging.exception("Error while retrieving default_backup")
 			sys.exit("default_backup n'est plus présent")
 
-		#passing vars
-		#sendVars(sh,namecols)
 		#used for calling scriptInit once page has loaded
 		with open("web2py/applications/TEMPLATE/controllers/default.py","a") as f:
 			logging.info("Successfully opened default")
