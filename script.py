@@ -9,6 +9,10 @@ import pickle
 #lib read excel files
 import xlrd
 import subprocess
+import matplotlib.pyplot as plt
+
+#plt.plot([1,2,3])
+#plt.show()
 
 def sendVars(sh,namecols):
 	list =[]
@@ -87,16 +91,27 @@ def insertRowsData(nameTable,sheet,cursor):
 	query = ""
 	idcpt = 0
 	firstline=True
+	isThereId = True
 	for rownum in range(sheet.nrows):
 		if(not firstline):
-			query = "INSERT INTO "+nameTable+" VALUES ("+str(idcpt)+","
+			query = "INSERT INTO "+nameTable+" VALUES ("
+			if isThereId:
+				query += str(idcpt)+","
+
 			for rowval in sheet.row_values(rownum):
+				
 				#if ((rowval != "")and(not rowval.isspace())):
-				query+='"'+rowval+'"'+','
+				#for null value
+				try:
+					query+='"'+rowval+'"'+','
+				except:
+					query+='"'+str(rowval)+'"'+','
 			query=query[:-1]
 			query+=')'
 			idcpt+=1
 		else:
+			if "primarykey" in sheet.row_values(rownum):
+				isThereId = False
 			firstline=False
 		try:
 			print query
@@ -165,13 +180,23 @@ if __name__ == '__main__':
 			logging.info("Creating tables")
 			cptC = 0
 			for i in allshnames:
-				f.write('\ndb.define_table("'+getSheetAsTableName(i)+'"')
+				pk = []
+				f.write('\ndb.define_table("'+getSheetAsTableName(i).encode('utf8')+'"')
 				for j in allcolumns[cptC]:
 					f.write(',Field("'+j[0].encode('utf8')+'"')
 					for h in j[+1:]:
-						f.write(","+h.encode('utf8'))
+						if not h == "primarykey":
+							f.write(","+h.encode('utf8'))
+						else:
+							#nameColumn should always be first element
+							pk.append(j[0])
 					f.write(')')
 				cptC += 1
+				if len(pk) > 0:
+					f.write(',primarykey=["'+pk[0].encode('utf8')+'"')
+					for pki in pk[+1:]:
+						f.write(',"'+pki.encode('utf8')+'"')
+					f.write(']')
 				f.write(')')
 
 			#getDb -> called from default.py to get the same db as db.py
