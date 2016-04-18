@@ -14,6 +14,8 @@ import matplotlib.pyplot as plt
 #plt.plot([1,2,3])
 #plt.show()
 
+
+
 def sendVars(sh,namecols):
 	list =[]
 	list.append(sh)
@@ -91,16 +93,14 @@ def insertRowsData(nameTable,sheet,cursor):
 	query = ""
 	idcpt = 0
 	firstline=True
-	isThereId = True
+	isThereId = False
+	ref = []
 	for rownum in range(sheet.nrows):
 		if(not firstline):
 			query = "INSERT INTO "+nameTable+" VALUES ("
-			if isThereId:
+			if not isThereId:
 				query += str(idcpt)+","
-
 			for rowval in sheet.row_values(rownum):
-				
-				#if ((rowval != "")and(not rowval.isspace())):
 				#for null value
 				try:
 					query+='"'+rowval+'"'+','
@@ -110,15 +110,40 @@ def insertRowsData(nameTable,sheet,cursor):
 			query+=')'
 			idcpt+=1
 		else:
-			if "primarykey" in sheet.row_values(rownum):
-				isThereId = False
+			if any("idthis" in s for s in sheet.row_values(rownum)):
+				isThereId = True
+			cpt = 0
+			for s in sheet.row_values(rownum):
+				if ("reference=" in s ):
+					ref.append(str(cpt)+'/'+s.split("=")[1])
+				cpt+=1
 			firstline=False
 		try:
-			print query
+			
 			cursor.execute(query)
 		except:
+			print query
+			print("Ins:Smth went wrong")
 			pass			
 			#sys.exit("Erreur insertion")
+	cptc=0
+	for i in ref:
+		j = i.split("/")
+		query= "INSERT INTO "+nameTable+j[1]+" VALUES ("
+		for colval in sheet.col_values(int(j[0]))[+1:]:
+			print colval
+			ncode = colval.split('|')
+			if(len(ncode)>0):
+				for n in ncode:
+					print str(n)
+					try:
+						cursor.execute(query+str(cptc)+','+str(n)+')')
+					except:
+						print query+str(cptc)+','+str(n)+')'
+						print("Ref:Smth went wrong")
+						pass
+						#sys.exit("Erreur insertion")
+			cptc+=1
 
 def getColumns(sheet):
 	# get names of columns (1st row value)
@@ -179,17 +204,22 @@ if __name__ == '__main__':
 			logging.info("Successfully opened db")
 			logging.info("Creating tables")
 			cptC = 0
+			ref = []
 			for i in allshnames:
 				pk = []
 				f.write('\ndb.define_table("'+getSheetAsTableName(i).encode('utf8')+'"')
 				for j in allcolumns[cptC]:
+					#nameColumn should always be first element
 					f.write(',Field("'+j[0].encode('utf8')+'"')
 					for h in j[+1:]:
-						if not h == "primarykey":
-							f.write(","+h.encode('utf8'))
-						else:
-							#nameColumn should always be first element
+						if h == "primarykey":
 							pk.append(j[0])
+						elif h ==  "idthis":
+							f.write(', "id"')
+						elif "reference=" in h:
+							ref.append(i+"/"+h.split("=")[1])		
+						else:
+							f.write(","+h.encode('utf8'))	
 					f.write(')')
 				cptC += 1
 				if len(pk) > 0:
@@ -199,6 +229,10 @@ if __name__ == '__main__':
 					f.write(']')
 				f.write(')')
 
+			for r in ref:
+				s=r.split("/")
+				f.write('\ndb.define_table("'+(s[0]+s[1]).encode('utf8')+'",Field("'+s[0].encode('utf8')+'",type="integer"),Field("'+s[1].encode('utf8')+'",type="integer"),primarykey=["'+s[0].encode('utf8')+'","'+s[1].encode('utf8')+'"])')
+				
 			#getDb -> called from default.py to get the same db as db.py
 			f.write('\ndef getDb():\n    module_path=os.path.abspath(os.path.dirname(__file__))\n    dbpath = module_path + "/../databases"\n    db_name = "storage.sqlite"\n    db = DAL("sqlite://"+ db_name ,folder=dbpath, auto_import=True)\n    return db')
 			#getTable -> called from default.py to get the table generated
