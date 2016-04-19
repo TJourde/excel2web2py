@@ -250,7 +250,7 @@ if __name__ == '__main__':
 		
 		
 		try:
-			logging.info("Trying to recover backup of default")
+			logging.info("Trying to recover backup of menu")
 			subprocess.check_call(["cp","web2py/applications/TEMPLATE/models/backup_menu.py","web2py/applications/TEMPLATE/models/menu.py"])
 			logging.info("Successfully recover backup of menu")
 		except subprocess.CalledProcessError:
