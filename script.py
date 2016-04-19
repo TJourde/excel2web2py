@@ -5,11 +5,11 @@ import os.path
 import sqlite3
 import logging
 #passing var
-import pickle
+#import pickle
 #lib read excel files
 import xlrd
 import subprocess
-import matplotlib.pyplot as plt
+#import matplotlib.pyplot as plt
 
 #plt.plot([1,2,3])
 #plt.show()
@@ -78,8 +78,12 @@ def getSheetAsTableName(shname):
 	except (UnicodeError):
 		sys.exit("Erreur: le nom de la feuille n'est pas unicode")
 	
-	newshname = shname.replace(" ","_").replace("(","").replace(")","")
-	return newshname
+	if " " in shname or "(" in shname or ")" in shname:
+		return False
+	else:
+		return True
+			#newshname = shname.replace(" ","_").replace("(","").replace(")","")
+	#return newshname
 
 def requestCreateTable(name,namecols):
 	s ='CREATE TABLE "'+ shname+'"(id,'
@@ -184,6 +188,10 @@ if __name__ == '__main__':
 		logging.info("Successfully opened the file")
 		logging.info("Trying to get sheets & names")
 		allshnames = wb.sheet_names()
+		for s in allshnames:
+			if not getSheetAsTableName(s):
+				sys.exit("Erreur: le nom de cette feuille contient des caractères spéciaux: "+str(s))
+
 		allsheets = wb.sheets()
 		logging.info("Successfully opened the sheets")
 		logging.info("Trying to retrieve the names of the columns of each sheets")
@@ -207,7 +215,7 @@ if __name__ == '__main__':
 			ref = []
 			for i in allshnames:
 				pk = []
-				f.write('\ndb.define_table("'+getSheetAsTableName(i).encode('utf8')+'"')
+				f.write('\ndb.define_table("'+str(i).encode('utf8')+'"')
 				for j in allcolumns[cptC]:
 					#nameColumn should always be first element
 					f.write(',Field("'+j[0].encode('utf8')+'"')
@@ -234,11 +242,29 @@ if __name__ == '__main__':
 				f.write('\ndb.define_table("'+(s[0]+s[1]).encode('utf8')+'",Field("'+s[0].encode('utf8')+'",type="integer"),Field("'+s[1].encode('utf8')+'",type="integer"),primarykey=["'+s[0].encode('utf8')+'","'+s[1].encode('utf8')+'"])')
 				
 			#getDb -> called from default.py to get the same db as db.py
-			f.write('\ndef getDb():\n    module_path=os.path.abspath(os.path.dirname(__file__))\n    dbpath = module_path + "/../databases"\n    db_name = "storage.sqlite"\n    db = DAL("sqlite://"+ db_name ,folder=dbpath, auto_import=True)\n    return db')
+			f.write('\ndef getDb():\n    from os import path\n    module_path=os.path.abspath(os.path.dirname(__file__))\n    dbpath = module_path + "/../databases"\n    db_name = "storage.sqlite"\n    db = DAL("sqlite://"+ db_name ,folder=dbpath, auto_import=True)\n    return db')
 			#getTable -> called from default.py to get the table generated
-			f.write('\ndef getTable(db):\n    return db.'+getSheetAsTableName(allshnames[0]))
+			f.write('\ndef getTable(db):\n    return db.'+str(allshnames[0]).encode('utf8'))
 
 		logging.info("Writing in db finished")
+		
+		
+		try:
+			logging.info("Trying to recover backup of default")
+			subprocess.check_call(["cp","web2py/applications/TEMPLATE/models/backup_menu.py","web2py/applications/TEMPLATE/models/menu.py"])
+			logging.info("Successfully recover backup of menu")
+		except subprocess.CalledProcessError:
+			logging.exception("Error while retrieving backup_menu")
+			sys.exit("menu_backup n'est plus présent")
+		with open("web2py/applications/TEMPLATE/models/menu.py","a") as f:
+			logging.info("Writing menu shortcuts")
+			f.write("def _():\n    app = request.application\n    ctr = request.controller\n    response.menu += [")
+			f.write("\n        (T('Main'), False, URL('default', 'main'))")
+			f.write("\n        ]")
+			f.write("\n_()")
+            
+			logging.info("Menu done")
+			
 		#Insert Rows
 		try:
 			logging.info("Trying to recover backup of default")
