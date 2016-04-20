@@ -1098,3 +1098,324 @@ success!
 success!
 success!
 success!
+timestamp: 2016-04-20T11:24:42.572451
+CREATE TABLE Produits_chimiques(
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    Nom_francais CHAR(30) UNIQUE,
+    Nom_anglais CHAR(512),
+    Synonyme CHAR(512),
+    N_CAS CHAR(512),
+    Formule CHAR(512),
+    Masse_molaire CHAR(512),
+    Forme CHAR(512),
+    Symbole CHAR(512),
+    Mentions_de_danger CHAR(512),
+    Conseils_de_prudence CHAR(512),
+    FDS_piece_jointe CHAR(512),
+    Hazard_statements CHAR(512),
+    Precautionary_statements CHAR(512),
+    MSDS_piece_jointe CHAR(512),
+    Lien_FDS CHAR(512),
+    Lien_MSDS CHAR(512)
+);
+success!
+timestamp: 2016-04-20T11:24:42.757044
+CREATE TABLE Mentions_de_danger(
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    Codes CHAR(512),
+    Mentions_de_danger CHAR(512),
+    Hazard_statements CHAR(512)
+);
+success!
+timestamp: 2016-04-20T11:24:42.882032
+CREATE TABLE Conseils_de_prudence(
+    Codes INTEGER PRIMARY KEY AUTOINCREMENT,
+    Conseils_de_prudence CHAR(512),
+    Precautionary_statements CHAR(512)
+);
+success!
+timestamp: 2016-04-20T11:24:42.967694
+CREATE TABLE Link(
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    Sheet CHAR(512),
+    Colonne CHAR(512),
+    ColonneT CHAR(512)
+);
+success!
+timestamp: 2016-04-20T11:24:43.075733
+CREATE TABLE Produits_chimiquesConseils_de_prudence(
+    Produits_chimiques INTEGER NOT NULL,
+    Conseils_de_prudence INTEGER NOT NULL,
+    PRIMARY KEY(Produits_chimiques, Conseils_de_prudence)) ;
+success!
+timestamp: 2016-04-20T11:48:06.428721
+CREATE TABLE Produits_chimiques(
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    Nom_francais CHAR(30) UNIQUE,
+    Nom_anglais CHAR(512),
+    Synonyme CHAR(512),
+    N_CAS CHAR(512),
+    Formule CHAR(512),
+    Masse_molaire CHAR(512),
+    Forme CHAR(512),
+    Symbole CHAR(512),
+    Mentions_de_danger CHAR(512),
+    Conseils_de_prudence CHAR(512),
+    FDS_piece_jointe CHAR(512),
+    Hazard_statements CHAR(512),
+    Precautionary_statements CHAR(512),
+    MSDS_piece_jointe CHAR(512),
+    Lien_FDS CHAR(512),
+    Lien_MSDS CHAR(512)
+);
+success!
+timestamp: 2016-04-20T11:48:06.526249
+CREATE TABLE Mentions_de_danger(
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    Codes CHAR(512),
+    Mentions_de_danger CHAR(512),
+    Hazard_statements CHAR(512)
+);
+success!
+timestamp: 2016-04-20T11:48:06.535111
+CREATE TABLE Conseils_de_prudence(
+    Codes INTEGER PRIMARY KEY AUTOINCREMENT,
+    Conseils_de_prudence CHAR(512),
+    Precautionary_statements CHAR(512)
+);
+success!
+timestamp: 2016-04-20T11:48:06.544951
+CREATE TABLE Link(
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    Sheet CHAR(512),
+    Colonne CHAR(512),
+    ColonneT CHAR(512)
+);
+success!
+timestamp: 2016-04-20T11:48:06.554848
+CREATE TABLE Produits_chimiquesConseils_de_prudence(
+    Produits_chimiques INTEGER NOT NULL,
+    Conseils_de_prudence INTEGER NOT NULL,
+    PRIMARY KEY(Produits_chimiques, Conseils_de_prudence)) ;
+success!
+success!
+timestamp: 2016-04-20T17:27:47.628227
+ALTER TABLE Conseils_de_prudence ADD id INTEGER PRIMARY KEY AUTOINCREMENT;
+timestamp: 2016-04-20T17:34:11.521622
+CREATE TABLE Produits_chimiques(
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    Nom_francais CHAR(512),
+    Nom_anglais CHAR(512),
+    Synonyme CHAR(512),
+    N_CAS CHAR(512),
+    Formule CHAR(512),
+    Masse_molaire CHAR(512),
+    Forme CHAR(512),
+    Symbole CHAR(512),
+    Mentions_de_danger CHAR(512),
+    Conseils_de_prudence CHAR(512),
+    FDS_piece_jointe CHAR(512),
+    Hazard_statements CHAR(512),
+    Precautionary_statements CHAR(512),
+    MSDS_piece_jointe CHAR(512),
+    Lien_FDS CHAR(512),
+    Lien_MSDS CHAR(512)
+);
+success!
+timestamp: 2016-04-20T17:34:11.669567
+CREATE TABLE Mentions_de_danger(
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    Codes CHAR(512),
+    Mentions_de_danger CHAR(512),
+    Hazard_statements CHAR(512)
+);
+success!
+timestamp: 2016-04-20T17:34:11.729917
+CREATE TABLE Conseils_de_prudence(
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    Conseils_de_prudence CHAR(512),
+    Precautionary_statements CHAR(512)
+);
+success!
+timestamp: 2016-04-20T17:34:11.825985
+CREATE TABLE Link(
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    Sheet CHAR(512),
+    Colonne CHAR(512),
+    ColonneT CHAR(512)
+);
+success!
+timestamp: 2016-04-20T17:34:11.843303
+CREATE TABLE Produits_chimiquesConseils_de_prudence(
+    Produits_chimiques INTEGER NOT NULL,
+    Conseils_de_prudence INTEGER NOT NULL,
+    PRIMARY KEY(Produits_chimiques, Conseils_de_prudence)) ;
+success!
+success!
+success!
+timestamp: 2016-04-20T17:41:51.096759
+ALTER TABLE Conseils_de_prudence ADD codes CHAR(512);
+success!
+success!
+timestamp: 2016-04-20T17:41:51.314651
+CREATE TABLE Produits_chimiquesConseils_de_prudenceConseils_de_prudence(
+    Produits_chimiques INTEGER NOT NULL,
+    Conseils_de_prudenceConseils_de_prudence INTEGER NOT NULL,
+    PRIMARY KEY(Produits_chimiques, Conseils_de_prudenceConseils_de_prudence)) ;
+success!
+success!
+success!
+success!
+success!
+success!
+success!
+timestamp: 2016-04-20T18:05:53.905401
+CREATE TABLE Produits_chimiques(
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    Nom_francais CHAR(30) UNIQUE,
+    Nom_anglais CHAR(512),
+    Synonyme CHAR(512),
+    N_CAS CHAR(512),
+    Formule CHAR(512),
+    Masse_molaire CHAR(512),
+    Forme CHAR(512),
+    Symbole CHAR(512),
+    Mentions_de_danger CHAR(512),
+    Conseils_de_prudence CHAR(512),
+    FDS_piece_jointe CHAR(512),
+    Hazard_statements CHAR(512),
+    Precautionary_statements CHAR(512),
+    MSDS_piece_jointe CHAR(512),
+    Lien_FDS CHAR(512),
+    Lien_MSDS CHAR(512)
+);
+success!
+timestamp: 2016-04-20T18:05:53.956816
+CREATE TABLE Mentions_de_danger(
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    Codes CHAR(512),
+    Mentions_de_danger CHAR(512),
+    Hazard_statements CHAR(512)
+);
+success!
+timestamp: 2016-04-20T18:05:53.975510
+CREATE TABLE Conseils_de_prudence(
+    Codes INTEGER PRIMARY KEY AUTOINCREMENT,
+    Conseils_de_prudence CHAR(512),
+    Precautionary_statements CHAR(512)
+);
+success!
+timestamp: 2016-04-20T18:05:53.985962
+CREATE TABLE Link(
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    Sheet CHAR(512),
+    Colonne CHAR(512),
+    ColonneT CHAR(512)
+);
+success!
+timestamp: 2016-04-20T18:05:53.994195
+CREATE TABLE Produits_chimiquesConseils_de_prudence(
+    Produits_chimiques INTEGER NOT NULL,
+    Conseils_de_prudence INTEGER NOT NULL,
+    PRIMARY KEY(Produits_chimiques, Conseils_de_prudence)) ;
+success!
+timestamp: 2016-04-20T18:10:19.713319
+CREATE TABLE Produits_chimiques(
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    Nom_francais CHAR(30) UNIQUE,
+    Nom_anglais CHAR(512),
+    Synonyme CHAR(512),
+    N_CAS CHAR(512),
+    Formule CHAR(512),
+    Masse_molaire CHAR(512),
+    Forme CHAR(512),
+    Symbole CHAR(512),
+    Mentions_de_danger CHAR(512),
+    Conseils_de_prudence CHAR(512),
+    FDS_piece_jointe CHAR(512),
+    Hazard_statements CHAR(512),
+    Precautionary_statements CHAR(512),
+    MSDS_piece_jointe CHAR(512),
+    Lien_FDS CHAR(512),
+    Lien_MSDS CHAR(512)
+);
+success!
+timestamp: 2016-04-20T18:10:19.892245
+CREATE TABLE Mentions_de_danger(
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    Codes CHAR(512),
+    Mentions_de_danger CHAR(512),
+    Hazard_statements CHAR(512)
+);
+success!
+timestamp: 2016-04-20T18:10:19.982629
+CREATE TABLE Conseils_de_prudence(
+    Codes INTEGER PRIMARY KEY AUTOINCREMENT,
+    Conseils_de_prudence CHAR(512),
+    Precautionary_statements CHAR(512)
+);
+success!
+timestamp: 2016-04-20T18:10:20.313750
+CREATE TABLE Link(
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    Sheet CHAR(512),
+    Colonne CHAR(512),
+    ColonneT CHAR(512)
+);
+success!
+timestamp: 2016-04-20T18:10:20.578804
+CREATE TABLE Produits_chimiquesConseils_de_prudence(
+    Produits_chimiques INTEGER NOT NULL,
+    Conseils_de_prudence INTEGER NOT NULL,
+    PRIMARY KEY(Produits_chimiques, Conseils_de_prudence)) ;
+success!
+timestamp: 2016-04-20T18:14:13.164490
+CREATE TABLE Produits_chimiques(
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    Nom_francais CHAR(30) UNIQUE,
+    Nom_anglais CHAR(512),
+    Synonyme CHAR(512),
+    N_CAS CHAR(512),
+    Formule CHAR(512),
+    Masse_molaire CHAR(512),
+    Forme CHAR(512),
+    Symbole CHAR(512),
+    Mentions_de_danger CHAR(512),
+    Conseils_de_prudence CHAR(512),
+    FDS_piece_jointe CHAR(512),
+    Hazard_statements CHAR(512),
+    Precautionary_statements CHAR(512),
+    MSDS_piece_jointe CHAR(512),
+    Lien_FDS CHAR(512),
+    Lien_MSDS CHAR(512)
+);
+success!
+timestamp: 2016-04-20T18:14:13.241538
+CREATE TABLE Mentions_de_danger(
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    Codes CHAR(512),
+    Mentions_de_danger CHAR(512),
+    Hazard_statements CHAR(512)
+);
+success!
+timestamp: 2016-04-20T18:14:13.252799
+CREATE TABLE Conseils_de_prudence(
+    Codes INTEGER PRIMARY KEY AUTOINCREMENT,
+    Conseils_de_prudence CHAR(512),
+    Precautionary_statements CHAR(512)
+);
+success!
+timestamp: 2016-04-20T18:14:13.266010
+CREATE TABLE Link(
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    Sheet CHAR(512),
+    Colonne CHAR(512),
+    ColonneT CHAR(512)
+);
+success!
+timestamp: 2016-04-20T18:14:13.281122
+CREATE TABLE Produits_chimiquesConseils_de_prudence(
+    Produits_chimiques INTEGER NOT NULL,
+    Conseils_de_prudence INTEGER NOT NULL,
+    PRIMARY KEY(Produits_chimiques, Conseils_de_prudence)) ;
+success!

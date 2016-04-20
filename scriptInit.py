@@ -10,7 +10,7 @@ import logging
 import subprocess
 import script
 
-
+print "hi"
 path=str(script.createFolder())
 logpath = str(script.createLogs(path))
 logging.basicConfig(filename=logpath,level=logging.DEBUG)
@@ -28,7 +28,7 @@ c = conn.cursor()
 logging.info("Successfully connected")
 logging.info("Insert requests")
 for s in allsheets:
-	script.insertRowsData(script.getSheetAsTableName(s.name),s,c)
+	script.insertRowsData(s.name,s,c)
 # Save (commit) the changes
 conn.commit()
 # We can also close the connection if we are done with it.
