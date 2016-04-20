@@ -71,7 +71,7 @@ def tryOpenWorkbookFile(pathFile):
 	except(IOError):
 		sys.exit("Erreur: le fichier n'a pas pu être consulté")
 
-def getSheetAsTableName(shname):
+def isSheetATableName(shname):
 	try:
 		shname.encode('ascii')
 	
@@ -94,6 +94,7 @@ def requestCreateTable(name,namecols):
 	return s
 
 def insertRowsData(nameTable,sheet,cursor):
+	
 	query = ""
 	idcpt = 0
 	firstline=True
@@ -189,7 +190,7 @@ if __name__ == '__main__':
 		logging.info("Trying to get sheets & names")
 		allshnames = wb.sheet_names()
 		for s in allshnames:
-			if not getSheetAsTableName(s):
+			if not isSheetATableName(s):
 				sys.exit("Erreur: le nom de cette feuille contient des caractères spéciaux: "+str(s))
 
 		allsheets = wb.sheets()
@@ -208,27 +209,37 @@ if __name__ == '__main__':
 			logging.exception("Error while retrieving db_backup")
 			sys.exit("db_backup n'est plus présent")	
 
+		ref = [] #used also to write represent attr in default controller
+		zeids = []
 		with open("web2py/applications/TEMPLATE/models/db.py","a") as f:
 			logging.info("Successfully opened db")
 			logging.info("Creating tables")
 			cptC = 0
-			ref = []
+			
 			for i in allshnames:
 				pk = []
+				zeid = "id"
 				f.write('\ndb.define_table("'+str(i).encode('utf8')+'"')
 				for j in allcolumns[cptC]:
+					
 					#nameColumn should always be first element
-					f.write(',Field("'+j[0].encode('utf8')+'"')
+					s=""
 					for h in j[+1:]:
+		
 						if h == "primarykey":
 							pk.append(j[0])
 						elif h ==  "idthis":
-							f.write(', "id"')
+							s+=',"id"'
+							zeid=j[0]
 						elif "reference=" in h:
 							ref.append(i+"/"+h.split("=")[1])		
 						else:
-							f.write(","+h.encode('utf8'))	
-					f.write(')')
+							#f.write(',Field("'+j[0].encode('utf8')+'"')
+							s+=","+h.encode('utf8')
+					
+					f.write(',Field("'+j[0].encode('utf8')+'"'+s+')')
+							
+				zeids.append(zeid+"/"+i)
 				cptC += 1
 				if len(pk) > 0:
 					f.write(',primarykey=["'+pk[0].encode('utf8')+'"')
@@ -237,9 +248,17 @@ if __name__ == '__main__':
 					f.write(']')
 				f.write(')')
 
-			for r in ref:
+			for idx,r in enumerate(ref):
 				s=r.split("/")
+				realid = "id"
+				for z in zeids:
+					if z.split("/")[1] == s[1]:
+						realid = z.split("/")[0]
 				f.write('\ndb.define_table("'+(s[0]+s[1]).encode('utf8')+'",Field("'+s[0].encode('utf8')+'",type="integer"),Field("'+s[1].encode('utf8')+'",type="integer"),primarykey=["'+s[0].encode('utf8')+'","'+s[1].encode('utf8')+'"])')
+				f.write('\ndef boo'+str(idx)+'(value,row,db):\n    rows = db((db.'+(s[0]+s[1]).encode('utf8')+'.'+s[0]+' == row.id)&(db.'+(s[0]+s[1]).encode('utf8')+'.'+s[1]+' == db.'+s[1]+'.'+realid.encode('utf8')+')).select(db.'+s[1]+'.ALL)')
+				f.write('\n    t=["w2p_odd odd","w2p_even even"]')
+				f.write('\n    return TABLE(*[TR(r.'+s[1]+', _class=t[idx%2]) for idx,r in enumerate(rows)])')
+	
 				
 			#getDb -> called from default.py to get the same db as db.py
 			f.write('\ndef getDb():\n    from os import path\n    module_path=os.path.abspath(os.path.dirname(__file__))\n    dbpath = module_path + "/../databases"\n    db_name = "storage.sqlite"\n    db = DAL("sqlite://"+ db_name ,folder=dbpath, auto_import=True)\n    return db')
@@ -256,6 +275,7 @@ if __name__ == '__main__':
 		except subprocess.CalledProcessError:
 			logging.exception("Error while retrieving backup_menu")
 			sys.exit("menu_backup n'est plus présent")
+			
 		with open("web2py/applications/TEMPLATE/models/menu.py","a") as f:
 			logging.info("Writing menu shortcuts")
 			f.write("def _():\n    app = request.application\n    ctr = request.controller\n    response.menu += [")
@@ -277,7 +297,20 @@ if __name__ == '__main__':
 		#used for calling scriptInit once page has loaded
 		with open("web2py/applications/TEMPLATE/controllers/default.py","a") as f:
 			logging.info("Successfully opened default")
-			f.write('def initData():')
+			f.write('def main():')
+			f.write('\n    db = getDb()')
+			f.write('\n    table = getTable(db)')
+			for idx,r in enumerate(ref):
+				s=r.split("/")
+				f.write('\n    db.'+s[0]+'.'+s[1]+'.represent = lambda val,row:boo'+str(idx)+'(val,row,db)')
+		
+			f.write('\n    rows = db(table).select()')
+			f.write('\n    if (len(rows) == 0):')
+			f.write('\n        initData()')
+			f.write('\n    form = forming(table)')
+			f.write('\n    records=SQLFORM.grid(table)')
+			f.write('\n    return dict(form=form, records=records)')
+			f.write('\ndef initData():')
 			f.write('\n    from subprocess import check_call')
 			f.write('\n    try:\n        subprocess.check_call(["python",'+'"'+str(script_path)+"/scriptInit.py"+'","'+str(script_path)+"/"+sys.argv[1]+'"'+"])")
 			f.write('\n    except subprocess.CalledProcessError:\n        sys.exit("Une erreur vient de se produire : scriptInit.py est-il présent?")')

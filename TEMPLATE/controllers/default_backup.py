@@ -9,17 +9,7 @@ import sys,subprocess
 #########################################################################
 
 #requires login
-def main():
-    db = getDb()
-    table = getTable(db)#in db.py,from script.py
-    rows = db(table).select()
-    if (len(rows) == 0):
-        initData()
-    form = forming(table)
-    #records=SQLFORM.grid(table,left=db.Conseils_de_prudence.on(db.Conseils_de_prudence.Codes == table.Conseils_de_prudence))
-    #records=SQLFORM.smartgrid(table,linked_tables=['Conseils_de_prudence'],editable=True)
-    records=SQLFORM.grid(table)
-    return dict(form=form, records=records)
+
 
 def index():
     return response.render()

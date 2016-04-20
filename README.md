@@ -12,7 +12,7 @@ Generate a db file(not use for now) and define a database in the databases folde
 Upon visiting the web2py server, you are able to access and search specific content from the excel file.
 
 Before Installation :
-
+Excel:
 The excel file's name cannot contain special characters or spaces.
 The name of the first sheet is used as the name of the table and the first element of the first row defines the names of the columns of the database 
 so they both should not contain special characters. 
@@ -23,9 +23,10 @@ type can be integer,float,string
 length : the number of characters in one cell.
 notnull : means that if True, prevent a new row to be inserted if the row contains an empty cell on this column.
 unique : means that if True, prevent 2 rows to have the same value on this column.
-
+Conseils_de_prudence|reference=Conseils_de_prudence : means that you want to link values to another sheet with the same name
 Codes|idthis: means that values on this column represent the row instead of the row's number.
 
+Programs:
 You will need to install web2py.
 
 You will also need to install these modules before deploying the application:
@@ -46,13 +47,20 @@ Installation :
 Unix : 
 unzip all files in the same folder
 run these commands : 
-cd pathUnzippedFolder
-python script.py pathtonameExcelfile
-
-then input the password for the administrator of the web2py server
-
+>cd pathUnzippedFolder
+>cd web2py
+>python web2py.py
+Then input the password for the administrator of the web2py server
+Then navigate to /admin/site
+Choose upload application with the name TEMPLATE
+Select the .w2p file
+Install
+close the server
+then run these commands:
+>cd pathUnzippedFolder
+>python script.py pathtonameExcelfile
+Then input the password for the administrator of the web2py server
 for now, it is only accessible at 127.0.0.1:8000
-
 if the page is not launched automatically,
 launch a web browser and type in the address bar that address
 
