@@ -23,7 +23,7 @@ def sendVars(sh,namecols):
 	pickle.dump(list,sys.stdout)
 
 def getStoragePath():
-	return str(os.path.abspath(os.path.dirname(__file__)))+"/web2py/applications/TEMPLATE/databases/storage.sqlite"
+	return str(os.path.abspath(os.path.dirname(__file__)))+"/applications/TEMPLATE/databases/storage.sqlite"
 
 def getTimeH():
 	localtime = time.localtime(time.time()) #heure machine
@@ -203,7 +203,7 @@ if __name__ == '__main__':
 	
 		try:
 			logging.info("Trying to recover backup of db")
-			subprocess.check_call(["cp","web2py/applications/TEMPLATE/models/db_backup.py","web2py/applications/TEMPLATE/models/db.py"])
+			subprocess.check_call(["cp","applications/TEMPLATE/models/db_backup.py","applications/TEMPLATE/models/db.py"])
 			logging.info("Successfully recover backup of db")
 		except subprocess.CalledProcessError:
 			logging.exception("Error while retrieving db_backup")
@@ -211,7 +211,7 @@ if __name__ == '__main__':
 
 		ref = [] #used also to write represent attr in default controller
 		zeids = []
-		with open("web2py/applications/TEMPLATE/models/db.py","a") as f:
+		with open("applications/TEMPLATE/models/db.py","a") as f:
 			logging.info("Successfully opened db")
 			logging.info("Creating tables")
 			cptC = 0
@@ -270,13 +270,13 @@ if __name__ == '__main__':
 		
 		try:
 			logging.info("Trying to recover backup of menu")
-			subprocess.check_call(["cp","web2py/applications/TEMPLATE/models/backup_menu.py","web2py/applications/TEMPLATE/models/menu.py"])
+			subprocess.check_call(["cp","applications/TEMPLATE/models/backup_menu.py","applications/TEMPLATE/models/menu.py"])
 			logging.info("Successfully recover backup of menu")
 		except subprocess.CalledProcessError:
 			logging.exception("Error while retrieving backup_menu")
 			sys.exit("menu_backup n'est plus présent")
 			
-		with open("web2py/applications/TEMPLATE/models/menu.py","a") as f:
+		with open("applications/TEMPLATE/models/menu.py","a") as f:
 			logging.info("Writing menu shortcuts")
 			f.write("def _():\n    app = request.application\n    ctr = request.controller\n    response.menu += [")
 			f.write("\n        (T('Main'), False, URL('default', 'main'))")
@@ -288,14 +288,14 @@ if __name__ == '__main__':
 		#Insert Rows
 		try:
 			logging.info("Trying to recover backup of default")
-			subprocess.check_call(["cp","web2py/applications/TEMPLATE/controllers/default_backup.py","web2py/applications/TEMPLATE/controllers/default.py"])
+			subprocess.check_call(["cp","applications/TEMPLATE/controllers/default_backup.py","applications/TEMPLATE/controllers/default.py"])
 			logging.info("Successfully recover backup of default")
 		except subprocess.CalledProcessError:
 			logging.exception("Error while retrieving default_backup")
 			sys.exit("default_backup n'est plus présent")
 
 		#used for calling scriptInit once page has loaded
-		with open("web2py/applications/TEMPLATE/controllers/default.py","a") as f:
+		with open("applications/TEMPLATE/controllers/default.py","a") as f:
 			logging.info("Successfully opened default")
 			f.write('def main():')
 			f.write('\n    db = getDb()')
@@ -317,7 +317,7 @@ if __name__ == '__main__':
 		
 		try:
 			logging.info("Trying to launch web2py")
-			subprocess.check_call(["python", "web2py/web2py.py"])
+			subprocess.check_call(["python", "web2py.py"])
 
 		except subprocess.CalledProcessError:
 			logging.exception("Error while executing web2py")
