@@ -124,10 +124,9 @@ def insertRowsData(nameTable,sheet,cursor):
 				cpt+=1
 			firstline=False
 		try:
-			
 			cursor.execute(query)
 		except:
-			print query
+			#print query
 			print("Ins:Smth went wrong")
 			pass			
 			#sys.exit("Erreur insertion")
@@ -136,19 +135,27 @@ def insertRowsData(nameTable,sheet,cursor):
 		j = i.split("/")
 		query= "INSERT INTO "+nameTable+j[1]+" VALUES ("
 		for colval in sheet.col_values(int(j[0]))[+1:]:
-			print colval
+			#print colval
 			ncode = colval.split('|')
 			if(len(ncode)>0):
 				for n in ncode:
-					print str(n)
+					#print str(n)
 					try:
 						cursor.execute(query+str(cptc)+','+str(n)+')')
 					except:
-						print query+str(cptc)+','+str(n)+')'
+						#print query+str(cptc)+','+str(n)+')'
 						print("Ref:Smth went wrong")
 						pass
 						#sys.exit("Erreur insertion")
 			cptc+=1
+
+def dropTable (nameTable,cursor):
+	try:
+		cursor.execute("DROP TABLE "+str(nameTable))
+	except:
+		#print nameTable
+		print("Drop:Smth went wrong")
+		pass
 
 def getColumns(sheet):
 	# get names of columns (1st row value)
@@ -189,10 +196,11 @@ if __name__ == '__main__':
 		logging.info("Successfully opened the file")
 		logging.info("Trying to get sheets & names")
 		allshnames = wb.sheet_names()
+		
 		for s in allshnames:
 			if not isSheetATableName(s):
 				sys.exit("Erreur: le nom de cette feuille contient des caractères spéciaux: "+str(s))
-
+		
 		allsheets = wb.sheets()
 		logging.info("Successfully opened the sheets")
 		logging.info("Trying to retrieve the names of the columns of each sheets")
@@ -207,7 +215,7 @@ if __name__ == '__main__':
 			logging.info("Successfully recover backup of db")
 		except subprocess.CalledProcessError:
 			logging.exception("Error while retrieving db_backup")
-			sys.exit("db_backup n'est plus présent")	
+			sys.exit("Cannot access db_backup")	
 
 		ref = [] #used also to write represent attr in default controller
 		zeids = []
@@ -215,7 +223,6 @@ if __name__ == '__main__':
 			logging.info("Successfully opened db")
 			logging.info("Creating tables")
 			cptC = 0
-			
 			for i in allshnames:
 				pk = []
 				zeid = "id"
@@ -247,9 +254,12 @@ if __name__ == '__main__':
 						f.write(',"'+pki.encode('utf8')+'"')
 					f.write(']')
 				f.write(')')
-
+			###table + generated table	
+			alltables = allshnames
+			
 			for idx,r in enumerate(ref):
 				s=r.split("/")
+				alltables.append(s[0]+s[1])
 				realid = "id"
 				for z in zeids:
 					if z.split("/")[1] == s[1]:
@@ -265,7 +275,76 @@ if __name__ == '__main__':
 			#getTable -> called from default.py to get the table generated
 			f.write('\ndef getTable(db):\n    return db.'+str(allshnames[0]).encode('utf8'))
 
-		logging.info("Writing in db finished")
+
+			###allow to know if tables should be dropped
+			allfiles = os.listdir('../applications/TEMPLATE/databases')
+			tableFile = False
+			tableHere = ""
+			###
+
+			for i in alltables:
+				if not tableFile:
+					for f in allfiles:
+						if not tableFile:
+							if str(i)+'.table' in f:
+								tableFile = True
+								tableHere = i
+			if tableFile:
+				logging.info("Table exists :"+str(tableHere))
+				print "This sheet's name "+str(tableHere)+" is already used"
+				print "Continuing will erase all tables with a sheet's name on this file"
+				print "Change this name if you wish to keep your data"
+				print "Or do you want to clear your data and generate new tables ? (y/n)"
+				drop = False
+				while not drop:
+					answer = raw_input()
+					if answer == "y":
+						logging.info("Deleting files")
+						
+						try:
+							logging.info("Trying to access database")
+							conn = sqlite3.connect(getStoragePath())
+							c = conn.cursor()
+						except:
+							logging.error("Database couldn't be reached"+getStoragePath())
+							sys.exit("Database couldn't be reached")
+						
+						logging.info("Success: connected to database")
+						drop = True
+						for s in allshnames:
+							delTable= ""
+							for f in allfiles:
+								if str(s)+'.table' in f:
+									dropTable(s,c)
+									delTable = f
+							try:
+								logging.info("Trying delete file")
+								subprocess.check_call(["rm","-rf","../applications/TEMPLATE/databases/"+str(delTable)])
+								logging.info("Successfully deleted file")
+							except subprocess.CalledProcessError:
+								logging.exception("Error while deleting"+str(f))
+								sys.exit("Cannot erase file")
+						
+						# Save (commit) the changes
+						conn.commit()
+						# We can also close the connection if we are done with it.
+						# Just be sure any changes have been committed or they will be lost.
+						conn.close()
+						logging.info("Done deleting files and dropping")
+					
+					elif answer == "n":
+						logging.info("Stopping script on user's demand")
+						print "Stopping script"
+						exit()
+					
+
+
+
+
+
+
+
+			logging.info("Writing in db finished")
 		
 		
 		try:
