@@ -270,7 +270,7 @@ if __name__ == '__main__':
 		
 		try:
 			logging.info("Trying to recover backup of menu")
-			subprocess.check_call(["cp","applications/TEMPLATE/models/backup_menu.py","applications/TEMPLATE/models/menu.py"])
+			subprocess.check_call(["cp","../applications/TEMPLATE/models/backup_menu.py","../applications/TEMPLATE/models/menu.py"])
 			logging.info("Successfully recover backup of menu")
 		except subprocess.CalledProcessError:
 			logging.exception("Error while retrieving backup_menu")
@@ -317,7 +317,7 @@ if __name__ == '__main__':
 		
 		try:
 			logging.info("Trying to launch web2py")
-			subprocess.check_call(["python", "web2py.py"])
+			subprocess.check_call(["python", "../web2py.py"])
 
 		except subprocess.CalledProcessError:
 			logging.exception("Error while executing web2py")
