@@ -15,7 +15,7 @@ import subprocess
 #plt.show()
 
 
-
+# not used
 def sendVars(sh,namecols):
 	list =[]
 	list.append(sh)
@@ -53,6 +53,7 @@ def createFolder():
 		return path
 	#os.chdir(path) # change de répertoire courant
 
+# test if name file pass criteria
 def fileWellFormatted(pathFile):
 	if(" " in pathFile):
 		sys.exit("Erreur: le nom du fichier contient des espaces")
@@ -70,7 +71,8 @@ def tryOpenWorkbookFile(pathFile):
 		return wb
 	except(IOError):
 		sys.exit("Erreur: le fichier n'a pas pu être consulté")
-
+		
+# test if sheet's name pass criteria
 def isSheetATableName(shname):
 	try:
 		shname.encode('ascii')
@@ -83,8 +85,9 @@ def isSheetATableName(shname):
 	else:
 		return True
 			#newshname = shname.replace(" ","_").replace("(","").replace(")","")
-	#return newshname
-
+			#return newshname
+	
+#not used
 def requestCreateTable(name,namecols):
 	s ='CREATE TABLE "'+ shname+'"(id,'
 	for i in namecols:
@@ -92,7 +95,7 @@ def requestCreateTable(name,namecols):
 	s=s[:-1]
 	s+=')'
 	return s
-
+#execute sql request to insert data
 def insertRowsData(nameTable,sheet,cursor):
 	
 	query = ""
@@ -100,6 +103,7 @@ def insertRowsData(nameTable,sheet,cursor):
 	firstline=True
 	isThereId = False
 	ref = []
+	##insert data of sheets
 	for rownum in range(sheet.nrows):
 		if(not firstline):
 			query = "INSERT INTO "+nameTable+" VALUES ("
@@ -131,6 +135,7 @@ def insertRowsData(nameTable,sheet,cursor):
 			pass			
 			#sys.exit("Erreur insertion")
 	cptc=0
+	## insert data on reference tables
 	for i in ref:
 		j = i.split("/")
 		query= "INSERT INTO "+nameTable+j[1]+" VALUES ("
@@ -175,7 +180,7 @@ def getColumns(sheet):
 			sys.exit(sheet.col_values(colnum)[0]+"Erreur: Nom de colonne n'est pas unicode")
 	return namecols
 
-#prevent execution on import
+#prevent execution on import from scriptInit
 if __name__ == '__main__':
 	script_path=os.path.abspath(os.path.dirname(__file__))
 	path=str(createFolder())
@@ -217,11 +222,15 @@ if __name__ == '__main__':
 			logging.exception("Error while retrieving db_backup")
 			sys.exit("Cannot access db_backup")	
 
+
+### Defining tables
+
 		ref = [] #used also to write represent attr in default controller
 		zeids = []
 		with open("../applications/TEMPLATE/models/db.py","a") as f:
 			logging.info("Successfully opened db")
 			logging.info("Creating tables")
+			##Defining sheet table
 			cptC = 0
 			for i in allshnames:
 				pk = []
@@ -254,41 +263,46 @@ if __name__ == '__main__':
 						f.write(',"'+pki.encode('utf8')+'"')
 					f.write(']')
 				f.write(')')
-			###table + generated table [:] prevent copy reference	
+				
+			#table + generated table [:] prevent copy reference	
 			alltables = allshnames[:]
 			
+			##Defining reference table
 			for idx,r in enumerate(ref):
 				s=r.split("/")
-				### ___ means reference table
+				# ___ means reference table
 				alltables.append(s[0]+"___"+s[1])
 				realid = "id"
 				
 				for z in zeids:
 					if z.split("/")[1] == s[1]:
 						realid = z.split("/")[0]
-				### ___ means reference table
+				# ___ means reference table
 				nameref= s[0]+"___"+s[1]
 				f.write('\ndb.define_table("'+(nameref).encode('utf8')+'",Field("'+s[0].encode('utf8')+'",type="integer"),Field("'+s[1].encode('utf8')+'",type="integer"),primarykey=["'+s[0].encode('utf8')+'","'+s[1].encode('utf8')+'"])')
+				# boo links tables for sqlform.grid
 				f.write('\ndef boo'+str(idx)+'(value,row,db):\n    rows = db((db.'+(nameref).encode('utf8')+'.'+s[0]+' == row.id)&(db.'+(nameref).encode('utf8')+'.'+s[1]+' == db.'+s[1]+'.'+realid.encode('utf8')+')).select(db.'+s[1]+'.ALL)')
 				f.write('\n    t=["w2p_odd odd","w2p_even even"]')
 				f.write('\n    return TABLE(*[TR(r.'+s[1]+', _class=t[idx%2]) for idx,r in enumerate(rows)])')
 	
-				
+			##Defining some heplful functions
 			#getDb -> called from default.py to get the same db as db.py
 			f.write('\ndef getDb():\n    from os import path\n    module_path=os.path.abspath(os.path.dirname(__file__))\n    dbpath = module_path + "/../databases"\n    db_name = "storage.sqlite"\n    db = DAL("sqlite://"+ db_name ,folder=dbpath, auto_import=True)\n    return db')
 			#getTable -> called from default.py to get the table generated
 			f.write('\ndef getTable(db):\n    return db.'+str(allshnames[0]).encode('utf8'))
 			
+			### Defining tables end
 			
-			
+			### Dropping tables
 
 
-			###allow to know if tables should be dropped
+			#allow to know if tables should be dropped
 			allfiles = os.listdir('../applications/TEMPLATE/databases')
 			tableFile = False
 			tableHere = ""
-			###
+			
 
+			##Test if table's name is a file in databases
 			for i in alltables:
 				if not tableFile:
 					for f in allfiles:
@@ -296,6 +310,8 @@ if __name__ == '__main__':
 							if str(i)+'.table' in f:
 								tableFile = True
 								tableHere = i
+								
+			##Warning user : delete possible
 			if tableFile:
 				logging.info("Table exists :"+str(tableHere))
 				print "This sheet's name "+str(tableHere)+" is already used"
@@ -303,6 +319,7 @@ if __name__ == '__main__':
 				print "Change this name if you wish to keep your data"
 				print "Or do you want to clear your data and generate new tables ? (y/n)"
 				drop = False
+				# only continue if drop, else quit exec
 				while not drop:
 					answer = raw_input()
 					if answer == "y":
@@ -322,12 +339,12 @@ if __name__ == '__main__':
 						for s in alltables:
 							delTable= ""
 							for f in allfiles:
-								##tmp solution don't know if always 7
+								#tmp solution don't know if always 7
 								if "7_"+str(s)+'.table' in f:
 									
 									dropTable(s,c)
 									delTable = f
-									###don't seem necessary but just in case
+									#don't seem necessary but just in case
 									try:
 										subprocess.check_call(["rm","-rfv","../applications/TEMPLATE/views/default/"+s+".html"])
 									except subprocess.CalledProcessError:
@@ -358,17 +375,17 @@ if __name__ == '__main__':
 						exit()
 					
 
+			### Dropping tables end
 
 
-
-			###actualize allfiles in case of delete
+			#actualize allfiles in case of delete
 			allfiles = os.listdir('../applications/TEMPLATE/databases')
 			
 			
 			logging.info("Writing in db finished")
 			logging.info("Closing file")
 			
-		
+		### Making menu
 		try:
 			logging.info("Trying to recover backup of menu")
 			subprocess.check_call(["cp","-v","../applications/TEMPLATE/models/backup_menu.py","../applications/TEMPLATE/models/menu.py"])
@@ -378,9 +395,9 @@ if __name__ == '__main__':
 			sys.exit("menu_backup cannot be found")
 			
 			
-		### Retrieve all existing tables'name
-		### keep files with table extension
-		### doesn't contain auth
+		## Retrieve all existing tables'name
+		# keep files with table extension
+		# doesn't contain auth
 		extables = []
 		for e in allfiles:
 			if ((".table" in e) and ("auth" not in e ) and ( "___" not in e)):
@@ -388,20 +405,48 @@ if __name__ == '__main__':
 				#___ design reference table, we don't want them to show up
 				extables.append(e.split("_",1)[1].split(".")[0])
 		
-	
+		#so we know if we have dropped tables when running this script, they are in the file
+		# maybe test if table in there instead
+		if not tableFile :
+			with open ("menucategory.txt","a") as f:
+				f.write("\n"+sys.argv[1])
+				for n in allshnames:
+					f.write('|'+n)
+		
+		#get all menu categories
+		listmenu = []
+		with open ("menucategory.txt") as f:
+			for line in f:
+				listmenu.append(str(line))	
+				
+		#we ignore empty lines
+		listmenu = [val for val in listmenu if val != '\n']
+		
+		## Shortcuts
+		
 		with open("../applications/TEMPLATE/models/menu.py","a") as f:
 			logging.info("Writing menu shortcuts")
-			
 			f.write("def _():\n    app = request.application\n    ctr = request.controller")
-			for e in extables + allshnames:
-				f.write("\n    response.menu += [")
-				f.write("\n        (T('"+e+"'), False, URL('default', '"+e+"'))")
-				f.write("\n        ]")
-			f.write("\n_()")
+			f.write("\n    response.menu += [")
+			s = ""
+			for l in listmenu:
+				lsplit = l.split("|")
+				s += "\n        (T('"+lsplit[0]+"'), False, None, ["
+				for e in lsplit[+1:]:
+					tmp = e.strip("\n")
+					s +="\n            (T('"+tmp+"'), False, URL('default', '"+tmp+"')),"
+				s=s[:-1]
+				s += "\n        ])"
+				s += ","
+			s = s[:-1]
+			s+=("\n    ]\n_()")
+			f.write(s)
             
 			logging.info("Menu done")
 			
-		#Insert Rows
+		### Making menu end
+		
+		### Insert Rows
 		try:
 			logging.info("Trying to recover backup of default")
 			subprocess.check_call(["cp","-v","../applications/TEMPLATE/controllers/default_backup.py","../applications/TEMPLATE/controllers/default.py"])
@@ -413,11 +458,12 @@ if __name__ == '__main__':
 		#used for calling scriptInit once page has loaded
 		with open("../applications/TEMPLATE/controllers/default.py","a") as f:
 			logging.info("Successfully opened default")
-			### first, we define all links to views from this file
+			# first, we define all links to views from this file
 			for e in extables + allshnames: 
 				f.write('\ndef '+e+'():')
 				f.write('\n    db = getDb()')
 				f.write('\n    table = db.'+e)
+				# necessary to differentiate to prevent dal errors
 				if e in allshnames:
 					for idx,r in enumerate(ref):
 						s=r.split("/")
@@ -432,8 +478,7 @@ if __name__ == '__main__':
 				f.write('\n    records=SQLFORM.grid(table)')
 				f.write('\n    return dict(form=form, records=records)')
 				
-					
-		
+			# used in case main table is empty	
 			f.write('\ndef initData():')
 			f.write('\n    from subprocess import check_call')
 			f.write('\n    try:\n        subprocess.check_call(["python",'+'"'+str(script_path)+"/scriptInit.py"+'","'+str(script_path)+"/"+sys.argv[1]+'"'+"])")
@@ -452,6 +497,8 @@ if __name__ == '__main__':
 			logging.exception("Error while retrieving table.html")
 			sys.exit("table.html cannot be found")
 			
+		###create new views end
+			
 		###launch web2py
 		
 		try:
@@ -461,7 +508,8 @@ if __name__ == '__main__':
 		except subprocess.CalledProcessError:
 			logging.exception("Error while executing web2py")
 			sys.exit("Erreur: python n'est pas présent sur la machine ou web2py a changé d'emplacement")
-
+		
+		###launch web2py end
 
 	else:
 		sys.exit("Erreur : pas de fichier sélectionné")

@@ -58,3 +58,50 @@ def forming(table):
         response.flash = 'form has errors'
     return form
 
+
+def Produits_chimiques():
+    db = getDb()
+    table = db.Produits_chimiques
+    db.Produits_chimiques.Conseils_de_prudence.represent = lambda val,row:boo0(val,row,db)
+    rows = db(table).select()
+    if (len(rows) == 0):
+        initData()
+    form = forming(table)
+    records=SQLFORM.grid(table)
+    return dict(form=form, records=records)
+def Mentions_de_danger():
+    db = getDb()
+    table = db.Mentions_de_danger
+    db.Produits_chimiques.Conseils_de_prudence.represent = lambda val,row:boo0(val,row,db)
+    rows = db(table).select()
+    if (len(rows) == 0):
+        initData()
+    form = forming(table)
+    records=SQLFORM.grid(table)
+    return dict(form=form, records=records)
+def Conseils_de_prudence():
+    db = getDb()
+    table = db.Conseils_de_prudence
+    db.Produits_chimiques.Conseils_de_prudence.represent = lambda val,row:boo0(val,row,db)
+    rows = db(table).select()
+    if (len(rows) == 0):
+        initData()
+    form = forming(table)
+    records=SQLFORM.grid(table)
+    return dict(form=form, records=records)
+def Link():
+    db = getDb()
+    table = db.Link
+    db.Produits_chimiques.Conseils_de_prudence.represent = lambda val,row:boo0(val,row,db)
+    rows = db(table).select()
+    if (len(rows) == 0):
+        initData()
+    form = forming(table)
+    records=SQLFORM.grid(table)
+    return dict(form=form, records=records)
+def initData():
+    from subprocess import check_call
+    try:
+        subprocess.check_call(["python","/home/tanguyl/Documents/projetPython/web2py/excel2web2py/scriptInit.py","/home/tanguyl/Documents/projetPython/web2py/excel2web2py/Inventaireproduitschimiques.xlsx"])
+    except subprocess.CalledProcessError:
+        sys.exit("Une erreur vient de se produire : scriptInit.py est-il présent?")

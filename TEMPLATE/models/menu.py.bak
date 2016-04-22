@@ -39,3 +39,12 @@ response.menu = [
 #if DEVELOPMENT_MENU: _()
 
 if "auth" in locals(): auth.wikimenu()
+def _():
+    app = request.application
+    ctr = request.controller
+    response.menu += [
+        (T('Inventaireproduitschimiques.xlsx'), False, '#' [
+            (T('Produits_chimiques'), False, URL('default', 'Produits_chimiques')),
+        ]),
+    ]
+_()
