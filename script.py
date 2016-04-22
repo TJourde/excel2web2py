@@ -138,6 +138,7 @@ def insertRowsData(nameTable,sheet,cursor):
 			#print colval
 			ncode = colval.split('|')
 			if(len(ncode)>0):
+				print ncode
 				for n in ncode:
 					#print str(n)
 					try:
@@ -153,7 +154,6 @@ def dropTable (nameTable,cursor):
 	try:
 		cursor.execute("DROP TABLE "+str(nameTable))
 	except:
-		#print nameTable
 		print("Drop:Smth went wrong")
 		pass
 
@@ -211,7 +211,7 @@ if __name__ == '__main__':
 	
 		try:
 			logging.info("Trying to recover backup of db")
-			subprocess.check_call(["cp","../applications/TEMPLATE/models/db_backup.py","../applications/TEMPLATE/models/db.py"])
+			subprocess.check_call(["cp","-v","../applications/TEMPLATE/models/db_backup.py","../applications/TEMPLATE/models/db.py"])
 			logging.info("Successfully recover backup of db")
 		except subprocess.CalledProcessError:
 			logging.exception("Error while retrieving db_backup")
@@ -254,18 +254,22 @@ if __name__ == '__main__':
 						f.write(',"'+pki.encode('utf8')+'"')
 					f.write(']')
 				f.write(')')
-			###table + generated table	
-			alltables = allshnames
+			###table + generated table [:] prevent copy reference	
+			alltables = allshnames[:]
 			
 			for idx,r in enumerate(ref):
 				s=r.split("/")
-				alltables.append(s[0]+s[1])
+				### ___ means reference table
+				alltables.append(s[0]+"___"+s[1])
 				realid = "id"
+				
 				for z in zeids:
 					if z.split("/")[1] == s[1]:
 						realid = z.split("/")[0]
-				f.write('\ndb.define_table("'+(s[0]+s[1]).encode('utf8')+'",Field("'+s[0].encode('utf8')+'",type="integer"),Field("'+s[1].encode('utf8')+'",type="integer"),primarykey=["'+s[0].encode('utf8')+'","'+s[1].encode('utf8')+'"])')
-				f.write('\ndef boo'+str(idx)+'(value,row,db):\n    rows = db((db.'+(s[0]+s[1]).encode('utf8')+'.'+s[0]+' == row.id)&(db.'+(s[0]+s[1]).encode('utf8')+'.'+s[1]+' == db.'+s[1]+'.'+realid.encode('utf8')+')).select(db.'+s[1]+'.ALL)')
+				### ___ means reference table
+				nameref= s[0]+"___"+s[1]
+				f.write('\ndb.define_table("'+(nameref).encode('utf8')+'",Field("'+s[0].encode('utf8')+'",type="integer"),Field("'+s[1].encode('utf8')+'",type="integer"),primarykey=["'+s[0].encode('utf8')+'","'+s[1].encode('utf8')+'"])')
+				f.write('\ndef boo'+str(idx)+'(value,row,db):\n    rows = db((db.'+(nameref).encode('utf8')+'.'+s[0]+' == row.id)&(db.'+(nameref).encode('utf8')+'.'+s[1]+' == db.'+s[1]+'.'+realid.encode('utf8')+')).select(db.'+s[1]+'.ALL)')
 				f.write('\n    t=["w2p_odd odd","w2p_even even"]')
 				f.write('\n    return TABLE(*[TR(r.'+s[1]+', _class=t[idx%2]) for idx,r in enumerate(rows)])')
 	
@@ -274,6 +278,9 @@ if __name__ == '__main__':
 			f.write('\ndef getDb():\n    from os import path\n    module_path=os.path.abspath(os.path.dirname(__file__))\n    dbpath = module_path + "/../databases"\n    db_name = "storage.sqlite"\n    db = DAL("sqlite://"+ db_name ,folder=dbpath, auto_import=True)\n    return db')
 			#getTable -> called from default.py to get the table generated
 			f.write('\ndef getTable(db):\n    return db.'+str(allshnames[0]).encode('utf8'))
+			
+			
+			
 
 
 			###allow to know if tables should be dropped
@@ -299,7 +306,7 @@ if __name__ == '__main__':
 				while not drop:
 					answer = raw_input()
 					if answer == "y":
-						logging.info("Deleting files")
+						logging.info("Deleting files in databases and view")
 						
 						try:
 							logging.info("Trying to access database")
@@ -311,19 +318,31 @@ if __name__ == '__main__':
 						
 						logging.info("Success: connected to database")
 						drop = True
-						for s in allshnames:
+						
+						for s in alltables:
 							delTable= ""
 							for f in allfiles:
-								if str(s)+'.table' in f:
+								##tmp solution don't know if always 7
+								if "7_"+str(s)+'.table' in f:
+									
 									dropTable(s,c)
 									delTable = f
-							try:
-								logging.info("Trying delete file")
-								subprocess.check_call(["rm","-rf","../applications/TEMPLATE/databases/"+str(delTable)])
-								logging.info("Successfully deleted file")
-							except subprocess.CalledProcessError:
-								logging.exception("Error while deleting"+str(f))
-								sys.exit("Cannot erase file")
+									###don't seem necessary but just in case
+									try:
+										subprocess.check_call(["rm","-rfv","../applications/TEMPLATE/views/default/"+s+".html"])
+									except subprocess.CalledProcessError:
+										logging.exception("Error while deleting"+s+".html")
+										pass
+									
+							if delTable is not "":		
+								try:
+									logging.info("Trying delete file")
+									subprocess.check_call(["rm","-rfv","../applications/TEMPLATE/databases/"+str(delTable)])
+									
+									logging.info("Successfully deleted file")
+								except subprocess.CalledProcessError:
+									logging.exception("Error while deleting"+str(f))
+									sys.exit("Cannot erase file")
 						
 						# Save (commit) the changes
 						conn.commit()
@@ -331,6 +350,7 @@ if __name__ == '__main__':
 						# Just be sure any changes have been committed or they will be lost.
 						conn.close()
 						logging.info("Done deleting files and dropping")
+						
 					
 					elif answer == "n":
 						logging.info("Stopping script on user's demand")
@@ -341,25 +361,42 @@ if __name__ == '__main__':
 
 
 
-
-
-
+			###actualize allfiles in case of delete
+			allfiles = os.listdir('../applications/TEMPLATE/databases')
+			
+			
 			logging.info("Writing in db finished")
-		
+			logging.info("Closing file")
+			
 		
 		try:
 			logging.info("Trying to recover backup of menu")
-			subprocess.check_call(["cp","../applications/TEMPLATE/models/backup_menu.py","../applications/TEMPLATE/models/menu.py"])
+			subprocess.check_call(["cp","-v","../applications/TEMPLATE/models/backup_menu.py","../applications/TEMPLATE/models/menu.py"])
 			logging.info("Successfully recover backup of menu")
 		except subprocess.CalledProcessError:
 			logging.exception("Error while retrieving backup_menu")
-			sys.exit("menu_backup n'est plus présent")
+			sys.exit("menu_backup cannot be found")
 			
+			
+		### Retrieve all existing tables'name
+		### keep files with table extension
+		### doesn't contain auth
+		extables = []
+		for e in allfiles:
+			if ((".table" in e) and ("auth" not in e ) and ( "___" not in e)):
+				#to make sure we get the real table's name, we remove the extension and keep what is after the hash key
+				#___ design reference table, we don't want them to show up
+				extables.append(e.split("_",1)[1].split(".")[0])
+		
+	
 		with open("../applications/TEMPLATE/models/menu.py","a") as f:
 			logging.info("Writing menu shortcuts")
-			f.write("def _():\n    app = request.application\n    ctr = request.controller\n    response.menu += [")
-			f.write("\n        (T('Main'), False, URL('default', 'main'))")
-			f.write("\n        ]")
+			
+			f.write("def _():\n    app = request.application\n    ctr = request.controller")
+			for e in extables + allshnames:
+				f.write("\n    response.menu += [")
+				f.write("\n        (T('"+e+"'), False, URL('default', '"+e+"'))")
+				f.write("\n        ]")
 			f.write("\n_()")
             
 			logging.info("Menu done")
@@ -367,32 +404,55 @@ if __name__ == '__main__':
 		#Insert Rows
 		try:
 			logging.info("Trying to recover backup of default")
-			subprocess.check_call(["cp","../applications/TEMPLATE/controllers/default_backup.py","../applications/TEMPLATE/controllers/default.py"])
+			subprocess.check_call(["cp","-v","../applications/TEMPLATE/controllers/default_backup.py","../applications/TEMPLATE/controllers/default.py"])
 			logging.info("Successfully recover backup of default")
 		except subprocess.CalledProcessError:
 			logging.exception("Error while retrieving default_backup")
-			sys.exit("default_backup n'est plus présent")
+			sys.exit("default_backup cannot be found")
 
 		#used for calling scriptInit once page has loaded
 		with open("../applications/TEMPLATE/controllers/default.py","a") as f:
 			logging.info("Successfully opened default")
-			f.write('def main():')
-			f.write('\n    db = getDb()')
-			f.write('\n    table = getTable(db)')
-			for idx,r in enumerate(ref):
-				s=r.split("/")
-				f.write('\n    db.'+s[0]+'.'+s[1]+'.represent = lambda val,row:boo'+str(idx)+'(val,row,db)')
+			### first, we define all links to views from this file
+			for e in extables + allshnames: 
+				f.write('\ndef '+e+'():')
+				f.write('\n    db = getDb()')
+				f.write('\n    table = db.'+e)
+				if e in allshnames:
+					for idx,r in enumerate(ref):
+						s=r.split("/")
+						f.write('\n    db.'+s[0]+'.'+s[1]+'.represent = lambda val,row:boo'+str(idx)+'(val,row,db)')
+						f.write('\n    rows = db(table).select()')
+						f.write('\n    if (len(rows) == 0):')
+						f.write('\n        initData()')
+				else:
+					f.write('\n    rows = db(table).select()')
+					
+				f.write('\n    form = forming(table)')
+				f.write('\n    records=SQLFORM.grid(table)')
+				f.write('\n    return dict(form=form, records=records)')
+				
+					
 		
-			f.write('\n    rows = db(table).select()')
-			f.write('\n    if (len(rows) == 0):')
-			f.write('\n        initData()')
-			f.write('\n    form = forming(table)')
-			f.write('\n    records=SQLFORM.grid(table)')
-			f.write('\n    return dict(form=form, records=records)')
 			f.write('\ndef initData():')
 			f.write('\n    from subprocess import check_call')
 			f.write('\n    try:\n        subprocess.check_call(["python",'+'"'+str(script_path)+"/scriptInit.py"+'","'+str(script_path)+"/"+sys.argv[1]+'"'+"])")
 			f.write('\n    except subprocess.CalledProcessError:\n        sys.exit("Une erreur vient de se produire : scriptInit.py est-il présent?")')
+			
+		logging.info("Writing in default finished")
+		logging.info("Closing file")
+		
+		###create new views
+		try:
+			logging.info("Trying to create views")
+			for e in allshnames:
+				subprocess.check_call(["cp","-v","../applications/TEMPLATE/views/default/table.html","../applications/TEMPLATE/views/default/"+e+".html"])
+				logging.info("Successfully created view :"+e)
+		except subprocess.CalledProcessError:
+			logging.exception("Error while retrieving table.html")
+			sys.exit("table.html cannot be found")
+			
+		###launch web2py
 		
 		try:
 			logging.info("Trying to launch web2py")

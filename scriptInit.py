@@ -10,7 +10,6 @@ import logging
 import subprocess
 import script
 
-print "hi"
 path=str(script.createFolder())
 logpath = str(script.createLogs(path))
 logging.basicConfig(filename=logpath,level=logging.DEBUG)
