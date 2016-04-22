@@ -467,7 +467,11 @@ if __name__ == '__main__':
 				if e in allshnames:
 					for idx,r in enumerate(ref):
 						s=r.split("/")
-						f.write('\n    db.'+s[0]+'.'+s[1]+'.represent = lambda val,row:boo'+str(idx)+'(val,row,db)')
+						print s[1]
+						print getColumns(wb.sheet_by_name(e))
+						for c in getColumns(wb.sheet_by_name(e)):
+							if s[1] in c :
+								f.write('\n    db.'+s[0]+'.'+s[1]+'.represent = lambda val,row:boo'+str(idx)+'(val,row,db)')
 						f.write('\n    rows = db(table).select()')
 						f.write('\n    if (len(rows) == 0):')
 						f.write('\n        initData()')
