@@ -24,11 +24,6 @@ Separate elements with the '|' (or "pipe") sign.
 Keywords to use to define the table with an example:
 - Nom_francais|type='string'|length=30|notnull=False|unique=True|reference=Nom_anglais|idthis
 - type can be integer,float,string
-#deprecated for now
-- length : the number of characters in one cell.
-- notnull : means that if True, prevent a new row to be inserted if the row contains an empty cell on this column.
-- unique : means that if True, prevent 2 rows to have the same value on this column.
-# end
 - reference="" : means that you want to link values to another sheet with the same name
 - idthis: means that values on this column represent the row instead of the row's number.
 
@@ -54,7 +49,7 @@ Example: `apt-get install xlrd`
 
 __Windows__:  
 You will have to download python 2.7, follow the instructions on the official website  
-Xlrd is packaged with this application, run > cd path/to/xlrd
+Xlrd is packaged with this application, run `cd path/to/xlrd`
 python setup.py install
 
 You may need to execute those operations as an administrator though(put `sudo` first before an install adn input the admin's password)
@@ -62,23 +57,11 @@ You may need to execute those operations as an administrator though(put `sudo` f
 Installation :
 --------------
 
-unzip the folder in your web2py folder, where web2py.py and applications are located
-#deprecated
-run these commands : 
-> Unix: cd path/to/web2py && python web2py.py
-Windows: cd path\to\web2py && python web2py.py
-
-Then input the password for the administrator of the web2py server  
-Launch the server  
-Then navigate to /admin/site  
-Look to Upload application and input __TEMPLATE__ for the application's name  
-Select the .w2p file  
-Install  
-Close the server  
-#end
+unzip the folder in your web2py folder, where web2py.py and applications are located  
+copy TEMPLATE to the applications folder in web2py
 
 Then run these commands:
->Unix: cd excel2web2py && python script.py path/to/nameExcelfile
+> Unix: cd excel2web2py && python script.py path/to/nameExcelfile  
 Windows: cd excel2web2py && python script.py path\to\nameExcelfile
 
 Then input the password for the administrator of the web2py server  
@@ -86,9 +69,10 @@ For now, it is only accessible at _127.0.0.1:8000_
 If the page is not launched automatically, launch a web browser and type in the address bar the address under this line.  
 You are now located at __127.0.0.1:8000/TEMPLATE/default/index.html__
 
-To relaunch your server, you will need to launch it from web2py.exe(Windows) or web2py.py(Unix)
+To relaunch your server without import files, you will need to launch it from web2py.exe(Windows) or web2py.py(Unix)  
 On Unix, run these commands : 
 > cd path/to/web2py && python web2py.py
+
 On Windows, simply execute it.
 
 __Bugs :__
