@@ -74,4 +74,5 @@ You are now located at 127.0.0.1:8000/TEMPLATE/default/index.html
 
 __Bugs :__
 
+notull seems to don't work as expected, empty names are taken.
 

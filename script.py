@@ -55,37 +55,49 @@ def createFolder():
 
 # test if name file pass criteria
 def fileWellFormatted(pathFile):
+	
+	path=str( createFolder())
+	logpath = str( createLogs(path))
+	logging.basicConfig(filename=logpath,level=logging.DEBUG)
+	
 	if(" " in pathFile):
-		sys.exit("Erreur: le nom du fichier contient des espaces")
+		logging.error("File's name has spaces")
+		sys.exit("Error: file's name has spaces")
 
 	try:
 		pathFile.encode('ascii')
 	
 	except (UnicodeError):
-		sys.exit("Erreur: le nom du fichier n'est pas unicode")
+		logging.exception("File's name couldn't be encoded in ascii")
+		sys.exit("Error : File's name couldn't be encoded in ascii")
 
 def tryOpenWorkbookFile(pathFile):
+	path=str( createFolder())
+	logpath = str( createLogs(path))
+	logging.basicConfig(filename=logpath,level=logging.DEBUG)
 	try:
 		#workbook doesn't need to be explicitly closed
 		wb = xlrd.open_workbook(pathFile)
 		return wb
 	except(IOError):
-		sys.exit("Erreur: le fichier n'a pas pu être consulté")
+		logging.exception("File couldn't be opened")
+		sys.exit("Error: File couldn't be opened")
 		
 # test if sheet's name pass criteria
 def isSheetATableName(shname):
+	path=str( createFolder())
+	logpath = str( createLogs(path))
+	logging.basicConfig(filename=logpath,level=logging.DEBUG)
 	try:
 		shname.encode('ascii')
 	
 	except (UnicodeError):
-		sys.exit("Erreur: le nom de la feuille n'est pas unicode")
+		logging.exception("Sheet's name couldn't be encoded in ascii")
+		sys.exit("Sheet's namecouldn't be encoded in ascii")
 	
 	if " " in shname or "(" in shname or ")" in shname:
-		return False
-	else:
-		return True
-			#newshname = shname.replace(" ","_").replace("(","").replace(")","")
-			#return newshname
+		logging.exception("Sheet's name has special characters: "+str(s))
+		sys.exit("Sheet's name has special characters: "+str(s))
 	
 #not used
 def requestCreateTable(name,namecols):
@@ -95,9 +107,12 @@ def requestCreateTable(name,namecols):
 	s=s[:-1]
 	s+=')'
 	return s
+	
 #execute sql request to insert data
 def insertRowsData(nameTable,sheet,cursor):
-	
+	path=str( createFolder())
+	logpath = str( createLogs(path))
+	logging.basicConfig(filename=logpath,level=logging.DEBUG)
 	query = ""
 	idcpt = 0
 	firstline=True
@@ -128,36 +143,50 @@ def insertRowsData(nameTable,sheet,cursor):
 				cpt+=1
 			firstline=False
 		try:
+			logging.info(query)
 			cursor.execute(query)
-		except:
+		except sqlite3.Error as er:
 			print("Ins:Smth went wrong")
+			logging.warning( er.message)
 			pass			
 			#sys.exit("Erreur insertion")
 	cptc=0
 	## insert data on reference tables
 	for i in ref:
 		j = i.split("/")
-		query= "INSERT INTO "+nameTable+j[1]+" VALUES ("
+		query= "INSERT INTO "+nameTable+"___"+j[1]+" VALUES ("
 		for colval in sheet.col_values(int(j[0]))[+1:]:
 			ncode = colval.split('|')
 			if(len(ncode)>0):
 				for n in ncode:
-					try:
-						cursor.execute(query+str(cptc)+','+str(n)+')')
-					except:
-						print("Ref:Smth went wrong")
-						pass
-						#sys.exit("Erreur insertion")
+					if n != "":
+						try:
+							logging.info(query+str(cptc)+','+str(n)+')')
+							cursor.execute(query+str(cptc)+','+str(n)+')')	
+						except sqlite3.Error as er:
+							print("Ref:Smth went wrong")
+							logging.warning(er.message)
+							pass
+							#sys.exit("Erreur insertion")
 			cptc+=1
 
 def dropTable (nameTable,cursor):
+	path=str( createFolder())
+	logpath = str( createLogs(path))
+	logging.basicConfig(filename=logpath,level=logging.DEBUG)
 	try:
+		logging.info("DROP TABLE "+str(nameTable))
 		cursor.execute("DROP TABLE "+str(nameTable))
-	except:
+	except  sqlite3.Error as er:
 		print("Drop:Smth went wrong")
+		logging.warning( str(nameTable))
+		logging.warning( er.message)
 		pass
 
 def getColumns(sheet):
+	path=str( createFolder())
+	logpath = str( createLogs(path))
+	logging.basicConfig(filename=logpath,level=logging.DEBUG)
 	# get names of columns (1st row value)
 	namecols = []
 
@@ -172,7 +201,8 @@ def getColumns(sheet):
 			namecols.append(nc)
 	
 		except (UnicodeError):
-			sys.exit(sheet.col_values(colnum)[0]+"Erreur: Nom de colonne n'est pas unicode")
+			logging.exception(sheet.col_values(colnum)[0]+" Column's name couldn't be encoded in ascii")
+			sys.exit(sheet.col_values(colnum)[0]+" Error: Column's name couldn't be encoded in ascii")
 	return namecols
 
 #prevent execution on import from scriptInit
@@ -198,8 +228,7 @@ if __name__ == '__main__':
 		allshnames = wb.sheet_names()
 		
 		for s in allshnames:
-			if not isSheetATableName(s):
-				sys.exit("Erreur: le nom de cette feuille contient des caractères spéciaux: "+str(s))
+			isSheetATableName(s):
 		
 		allsheets = wb.sheets()
 		logging.info("Successfully opened the sheets")
@@ -325,7 +354,7 @@ if __name__ == '__main__':
 							conn = sqlite3.connect(getStoragePath())
 							c = conn.cursor()
 						except:
-							logging.error("Database couldn't be reached"+getStoragePath())
+							logging.exception("Database couldn't be reached"+getStoragePath())
 							sys.exit("Database couldn't be reached")
 						
 						logging.info("Success: connected to database")
@@ -483,7 +512,7 @@ if __name__ == '__main__':
 			f.write('\ndef initData():')
 			f.write('\n    from subprocess import check_call')
 			f.write('\n    try:\n        subprocess.check_call(["python",'+'"'+str(script_path)+"/scriptInit.py"+'","'+str(script_path)+"/"+sys.argv[1]+'"'+"])")
-			f.write('\n    except subprocess.CalledProcessError:\n        sys.exit("Une erreur vient de se produire : scriptInit.py est-il présent?")')
+			f.write('\n    except subprocess.CalledProcessError:\n        sys.exit("Error : scriptInit.py could not be reached")')
 			
 		logging.info("Writing in default finished")
 		logging.info("Closing file")
@@ -508,11 +537,11 @@ if __name__ == '__main__':
 
 		except subprocess.CalledProcessError:
 			logging.exception("Error while executing web2py")
-			sys.exit("Erreur: python n'est pas présent sur la machine ou web2py a changé d'emplacement")
+			sys.exit("Erreur: python is no present on thsi computer or web2py could not be reached")
 		
 		###launch web2py end
 
 	else:
-		sys.exit("Erreur : pas de fichier sélectionné")
+		sys.exit("Error : no file selected")
 
 
