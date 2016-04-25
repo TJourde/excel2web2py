@@ -22,7 +22,7 @@ The name of the first sheet is used as the name of the table and the first eleme
 Separate elements with the '|' (or "pipe") sign. 
 
 Keywords to use to define the table with an example:
-- Nom_francais|type='string'|length=30|notnull=False|unique=True|reference=Nom_anglais|idthis
+- Nom_francais|type='string'|reference=Nom_anglais|idthis
 - type can be integer,float,string
 - reference="" : means that you want to link values to another sheet with the same name
 - idthis: means that values on this column represent the row instead of the row's number.
