@@ -130,7 +130,6 @@ def insertRowsData(nameTable,sheet,cursor):
 		try:
 			cursor.execute(query)
 		except:
-			#print query
 			print("Ins:Smth went wrong")
 			pass			
 			#sys.exit("Erreur insertion")
@@ -140,16 +139,12 @@ def insertRowsData(nameTable,sheet,cursor):
 		j = i.split("/")
 		query= "INSERT INTO "+nameTable+j[1]+" VALUES ("
 		for colval in sheet.col_values(int(j[0]))[+1:]:
-			#print colval
 			ncode = colval.split('|')
 			if(len(ncode)>0):
-				print ncode
 				for n in ncode:
-					#print str(n)
 					try:
 						cursor.execute(query+str(cptc)+','+str(n)+')')
 					except:
-						#print query+str(cptc)+','+str(n)+')'
 						print("Ref:Smth went wrong")
 						pass
 						#sys.exit("Erreur insertion")
@@ -405,9 +400,13 @@ if __name__ == '__main__':
 				#___ design reference table, we don't want them to show up
 				extables.append(e.split("_",1)[1].split(".")[0])
 		
-		#so we know if we have dropped tables when running this script, they are in the file
-		# maybe test if table in there instead
-		if not tableFile :
+		#if name file is in menucategory then no new category
+		newc = True
+		with open ("menucategory.txt") as f:
+			for line in f:
+				if str(sys.argv[1]) in line :
+					newc = False
+		if newc :
 			with open ("menucategory.txt","a") as f:
 				f.write("\n"+sys.argv[1])
 				for n in allshnames:
@@ -467,8 +466,6 @@ if __name__ == '__main__':
 				if e in allshnames:
 					for idx,r in enumerate(ref):
 						s=r.split("/")
-						print s[1]
-						print getColumns(wb.sheet_by_name(e))
 						for c in getColumns(wb.sheet_by_name(e)):
 							if s[1] in c :
 								f.write('\n    db.'+s[0]+'.'+s[1]+'.represent = lambda val,row:boo'+str(idx)+'(val,row,db)')

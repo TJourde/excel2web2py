@@ -74,4 +74,4 @@ You are now located at 127.0.0.1:8000/TEMPLATE/default/index.html
 
 __Bugs :__
 
-If the page cannot load (syntax error __init__.py), refresh the page (fixed : removed __init__.py + pyc w/o repercussions so far)
+
