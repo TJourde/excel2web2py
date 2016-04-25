@@ -9,6 +9,7 @@ import logging
 #lib read excel files
 import xlrd
 import subprocess
+
 #import matplotlib.pyplot as plt
 
 #plt.plot([1,2,3])
@@ -35,7 +36,7 @@ def createLogs(zepath):
 	timeh =  str(localtime[3])+'_'+str(localtime[4])+'_'+str(localtime[5])
 	logpath = str(zepath)+"Log_"+timeh+".log"	
 	return logpath
-
+	
 def createFolder():
 	localtime = time.localtime(time.time()) #heure machine
 	timedate = str(localtime[0])+'_'+str(localtime[1])+'_'+str(localtime[2])
@@ -228,7 +229,7 @@ if __name__ == '__main__':
 		allshnames = wb.sheet_names()
 		
 		for s in allshnames:
-			isSheetATableName(s):
+			isSheetATableName(s)
 		
 		allsheets = wb.sheets()
 		logging.info("Successfully opened the sheets")
@@ -240,11 +241,16 @@ if __name__ == '__main__':
 	
 		try:
 			logging.info("Trying to recover backup of db")
-			subprocess.check_call(["cp","-v","../applications/TEMPLATE/models/db_backup.py","../applications/TEMPLATE/models/db.py"])
+			if os.name =="nt":
+				subprocess.check_call(["copy","%cd%"+"\..\\applications\\TEMPLATE\\models\\db_backup.py","%cd%"+"\..\\applications\\TEMPLATE\\models\\db.py"],shell=True)
+			else:
+				subprocess.check_call(["cp","-v","../applications/TEMPLATE/models/db_backup.py","../applications/TEMPLATE/models/db.py"])	
 			logging.info("Successfully recover backup of db")
-		except subprocess.CalledProcessError:
-			logging.exception("Error while retrieving db_backup")
-			sys.exit("Cannot access db_backup")	
+		except subprocess.CalledProcessError as er:
+			logging.exception("Error while retrieving db_backup: " + er.message)
+			sys.exit("Cannot access db_backup")
+			
+		
 
 
 ### Defining tables
@@ -273,9 +279,9 @@ if __name__ == '__main__':
 							zeid=j[0]
 						elif "reference=" in h:
 							ref.append(i+"/"+h.split("=")[1])		
-						else:
-							#f.write(',Field("'+j[0].encode('utf8')+'"')
-							s+=","+h.encode('utf8')
+						elif "type=" in h:
+							if( ("integer" in h) or ("float" in h) or ("string" in h) ):
+								s+=","+h.encode('utf8')
 					
 					f.write(',Field("'+j[0].encode('utf8')+'"'+s+')')
 							
@@ -368,21 +374,18 @@ if __name__ == '__main__':
 									
 									dropTable(s,c)
 									delTable = f
-									#don't seem necessary but just in case
-									try:
-										subprocess.check_call(["rm","-rfv","../applications/TEMPLATE/views/default/"+s+".html"])
-									except subprocess.CalledProcessError:
-										logging.exception("Error while deleting"+s+".html")
-										pass
 									
 							if delTable is not "":		
 								try:
 									logging.info("Trying delete file")
-									subprocess.check_call(["rm","-rfv","../applications/TEMPLATE/databases/"+str(delTable)])
+									if os.name =="nt":
+										subprocess.check_call(["DEL","%cd%"+"\..\\applications\\TEMPLATE\\databases\\"+str(delTable)],shell=True)
+									else:
+										subprocess.check_call(["rm","-rfv","../applications/TEMPLATE/databases/"+str(delTable)])
 									
 									logging.info("Successfully deleted file")
-								except subprocess.CalledProcessError:
-									logging.exception("Error while deleting"+str(f))
+								except subprocess.CalledProcessError as er:
+									logging.exception("Error while deleting "+str(f)+" : "+er.message )
 									sys.exit("Cannot erase file")
 						
 						# Save (commit) the changes
@@ -412,10 +415,14 @@ if __name__ == '__main__':
 		### Making menu
 		try:
 			logging.info("Trying to recover backup of menu")
-			subprocess.check_call(["cp","-v","../applications/TEMPLATE/models/backup_menu.py","../applications/TEMPLATE/models/menu.py"])
+			if os.name =="nt":
+				subprocess.check_call(["copy","%cd%"+"\..\\applications\\TEMPLATE\\models\\backup_menu.py","%cd%"+"\..\\applications\\TEMPLATE\\models\\menu.py"],shell=True)
+			else:
+				subprocess.check_call(["cp","-v","../applications/TEMPLATE/models/backup_menu.py","../applications/TEMPLATE/models/menu.py"])
+			
 			logging.info("Successfully recover backup of menu")
-		except subprocess.CalledProcessError:
-			logging.exception("Error while retrieving backup_menu")
+		except subprocess.CalledProcessError as er:
+			logging.exception("Error while retrieving backup_menu : "+er.message)
 			sys.exit("menu_backup cannot be found")
 			
 			
@@ -433,11 +440,11 @@ if __name__ == '__main__':
 		newc = True
 		with open ("menucategory.txt") as f:
 			for line in f:
-				if str(sys.argv[1]) in line :
+				if str(sys.argv[1].split('.')[0]) in line :
 					newc = False
 		if newc :
 			with open ("menucategory.txt","a") as f:
-				f.write("\n"+sys.argv[1])
+				f.write("\n"+sys.argv[1].split('.')[0])
 				for n in allshnames:
 					f.write('|'+n)
 		
@@ -477,10 +484,15 @@ if __name__ == '__main__':
 		### Insert Rows
 		try:
 			logging.info("Trying to recover backup of default")
-			subprocess.check_call(["cp","-v","../applications/TEMPLATE/controllers/default_backup.py","../applications/TEMPLATE/controllers/default.py"])
+			if os.name =="nt":
+				subprocess.check_call(["copy","%cd%"+"\..\\applications\\TEMPLATE\\controllers\\default_backup.py","%cd%"+"\..\\applications\\TEMPLATE\\controllers\\default.py"],shell=True)
+			else:
+				subprocess.check_call(["cp","-v","../applications/TEMPLATE/controllers/default_backup.py","../applications/TEMPLATE/controllers/default.py"])
+			
+			
 			logging.info("Successfully recover backup of default")
-		except subprocess.CalledProcessError:
-			logging.exception("Error while retrieving default_backup")
+		except subprocess.CalledProcessError as er:
+			logging.exception("Error while retrieving default_backup : " + er.message)
 			sys.exit("default_backup cannot be found")
 
 		#used for calling scriptInit once page has loaded
@@ -521,10 +533,14 @@ if __name__ == '__main__':
 		try:
 			logging.info("Trying to create views")
 			for e in allshnames:
-				subprocess.check_call(["cp","-v","../applications/TEMPLATE/views/default/table.html","../applications/TEMPLATE/views/default/"+e+".html"])
+				if os.name =="nt":
+					subprocess.check_call(["copy","%cd%"+"\..\\applications\\TEMPLATE\\views\\default\\table.html","%cd%"+"\..\\applications\\TEMPLATE\\views\\default\\"+e+".html"],shell=True)
+				else:
+					subprocess.check_call(["cp","-v","../applications/TEMPLATE/views/default/table.html","../applications/TEMPLATE/views/default/"+e+".html"])
+			
 				logging.info("Successfully created view :"+e)
-		except subprocess.CalledProcessError:
-			logging.exception("Error while retrieving table.html")
+		except subprocess.CalledProcessError as er:
+			logging.exception("Error while retrieving table.html : "+er.message)
 			sys.exit("table.html cannot be found")
 			
 		###create new views end
@@ -533,11 +549,13 @@ if __name__ == '__main__':
 		
 		try:
 			logging.info("Trying to launch web2py")
-			subprocess.check_call(["python", "../web2py.py"])
-
-		except subprocess.CalledProcessError:
-			logging.exception("Error while executing web2py")
-			sys.exit("Erreur: python is no present on thsi computer or web2py could not be reached")
+			if os.name =="nt": 
+				subprocess.check_call(["%cd%\..\\web2py.exe"],shell=True)
+			else:
+				subprocess.check_call(["python", "../web2py.py"])
+		except subprocess.CalledProcessError as er:
+			logging.exception("Error while executing web2py : " + er.message)
+			sys.exit("Error: python is no present on this computer or web2py could not be reached")
 		
 		###launch web2py end
 
