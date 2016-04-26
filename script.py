@@ -279,8 +279,7 @@ if __name__ == '__main__':
 							zeid=j[0]
 						elif "reference=" in h:
 							ref.append(i+"/"+h.split("=")[1])		
-						elif "type=" in h:
-							if( ("integer" in h) or ("float" in h) or ("string" in h) ):
+						elif (("type='integer'" == h) or ("type='float'" == h) or ("type='string'" = h)) :
 								s+=","+h.encode('utf8')
 					
 					f.write(',Field("'+j[0].encode('utf8')+'"'+s+')')
