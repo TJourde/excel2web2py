@@ -279,7 +279,7 @@ if __name__ == '__main__':
 							zeid=j[0]
 						elif "reference=" in h:
 							ref.append(i+"/"+h.split("=")[1])		
-						elif (("type='integer'" == h) or ("type='float'" == h) or ("type='string'" = h)) :
+						elif (("type='integer'" == h) or ("type='float'" == h) or ("type='string'" == h)) :
 								s+=","+h.encode('utf8')
 					
 					f.write(',Field("'+j[0].encode('utf8')+'"'+s+')')
@@ -515,9 +515,19 @@ if __name__ == '__main__':
 				else:
 					f.write('\n    rows = db(table).select()')
 					
-				f.write('\n    form = forming(table)')
+				f.write('\n    form1 = forming(table)')
+				
+				s="\n    form2 = FORM("
+				for c in getColumns(wb.sheet_by_name(e)):
+					s+="DIV(LABEL('"+c[0]+"'),INPUT(_name='"+c[0]+"',_type='checkbox'),_class='row'),"
+				s+="INPUT(_type='submit',_class='btn btn-primary'),_class='form-horizontal',_action='',_method='get')"
+				f.write(s)
+				f.write("\n    plot=P('hello')")
+				f.write('\n    if len(request.get_vars)>1:')
+				f.write("\n        vars = request.get_vars.keys()")
+				f.write('\n        plot=P(vars)')
 				f.write('\n    records=SQLFORM.grid(table)')
-				f.write('\n    return dict(form=form, records=records)')
+				f.write('\n    return dict(form1=form1, form2=form2, plot=plot, records=records)')
 				
 			# used in case main table is empty	
 			f.write('\ndef initData():')

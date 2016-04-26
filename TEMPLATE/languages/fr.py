@@ -149,6 +149,7 @@
 'Invalid Query': 'Requête Invalide',
 'invalid request': 'requête invalide',
 'Invalid username': 'Invalid username',
+'Inventaire_Produits_Chimiques.xlsx': 'Inventaire_Produits_Chimiques.xlsx',
 'Inventaireproduitschimiques': 'Inventaireproduitschimiques',
 'Inventaireproduitschimiques.xlsx': 'Inventaireproduitschimiques.xlsx',
 'Is Active': 'Est actif',
