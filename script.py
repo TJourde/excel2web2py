@@ -151,9 +151,10 @@ def insertRowsData(nameTable,sheet,cursor):
 			logging.warning( er.message)
 			pass			
 			#sys.exit("Erreur insertion")
-	cptc=0
+	
 	## insert data on reference tables
 	for i in ref:
+		cptc=0
 		j = i.split("/")
 		query= "INSERT INTO "+nameTable+"___"+j[1]+" VALUES ("
 		for colval in sheet.col_values(int(j[0]))[+1:]:
@@ -281,7 +282,6 @@ if __name__ == '__main__':
 							ref.append(i+"/"+h.split("=")[1])		
 						elif (("type='integer'" == h) or ("type='float'" == h) or ("type='string'" == h)) :
 								s+=","+h.encode('utf8')
-					
 					f.write(',Field("'+j[0].encode('utf8')+'"'+s+')')
 							
 				zeids.append(zeid+"/"+i)
@@ -519,14 +519,18 @@ if __name__ == '__main__':
 				
 				s="\n    form2 = FORM("
 				for c in getColumns(wb.sheet_by_name(e)):
-					s+="DIV(LABEL('"+c[0]+"'),INPUT(_name='"+c[0]+"',_type='checkbox'),_class='row'),"
+					if (("type='integer'" in c) or( "type='float'" in c)):
+						s+="DIV(LABEL('"+c[0]+"'),INPUT(_name='"+c[0]+"',_type='checkbox'),_class='row'),"
 				s+="INPUT(_type='submit',_class='btn btn-primary'),_class='form-horizontal',_action='',_method='get')"
-				f.write(s)
-				f.write("\n    plot=P('hello')")
+				if "DIV" in s:
+					f.write(s)
+				else:
+					f.write("\n    form2=''")
+				f.write("\n    plot=DIV('')")
 				f.write('\n    if len(request.get_vars)>1:')
 				f.write("\n        vars = request.get_vars.keys()")
-				f.write('\n        plot=P(vars)')
-				f.write('\n    records=SQLFORM.grid(table)')
+				f.write('\n        plot=DIV(vars)')
+				f.write('\n    records=SQLFORM.grid(table,paginate=10,maxtextlength=256)')
 				f.write('\n    return dict(form1=form1, form2=form2, plot=plot, records=records)')
 				
 			# used in case main table is empty	
