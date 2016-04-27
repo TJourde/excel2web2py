@@ -4,8 +4,6 @@ import sys, os, time, errno
 import os.path
 import sqlite3
 import logging
-#passing var
-#import pickle
 #lib read excel files
 import xlrd
 import subprocess
@@ -14,14 +12,6 @@ import subprocess
 
 #plt.plot([1,2,3])
 #plt.show()
-
-
-# not used
-def sendVars(sh,namecols):
-	list =[]
-	list.append(sh)
-	list.append(namecols)
-	pickle.dump(list,sys.stdout)
 
 def getStoragePath():
 	return str(os.path.abspath(os.path.dirname(__file__)))+"/../applications/TEMPLATE/databases/storage.sqlite"
@@ -52,8 +42,7 @@ def createFolder():
 			raise
 	finally:
 		return path
-	#os.chdir(path) # change de répertoire courant
-
+	
 # test if name file pass criteria
 def fileWellFormatted(pathFile):
 	
@@ -84,30 +73,23 @@ def tryOpenWorkbookFile(pathFile):
 		logging.exception("File couldn't be opened")
 		sys.exit("Error: File couldn't be opened")
 		
-# test if sheet's name pass criteria
-def isSheetATableName(shname):
+# test if name pass criteria (does it pass )
+def isNametATableName(name):
 	path=str( createFolder())
 	logpath = str( createLogs(path))
 	logging.basicConfig(filename=logpath,level=logging.DEBUG)
 	try:
-		shname.encode('ascii')
+		name.encode('ascii')
 	
 	except (UnicodeError):
-		logging.exception("Sheet's name couldn't be encoded in ascii")
-		sys.exit("Sheet's namecouldn't be encoded in ascii")
+		logging.exception("Name couldn't be encoded in ascii")
+		sys.exit("Name couldn't be encoded in ascii")
 	
-	if " " in shname or "(" in shname or ")" in shname:
-		logging.exception("Sheet's name has special characters: "+str(s))
-		sys.exit("Sheet's name has special characters: "+str(s))
-	
-#not used
-def requestCreateTable(name,namecols):
-	s ='CREATE TABLE "'+ shname+'"(id,'
-	for i in namecols:
-		s+='"'+i+'",'
-	s=s[:-1]
-	s+=')'
-	return s
+	for i in name.split("_"):
+		if not i.isalpha():
+			logging.exception("Namehas special characters: "+ name)
+			sys.exit("Name has special characters: "+ name )
+		
 	
 #execute sql request to insert data
 def insertRowsData(nameTable,sheet,cursor):
@@ -184,7 +166,7 @@ def dropTable (nameTable,cursor):
 		logging.warning( str(nameTable))
 		logging.warning( er.message)
 		pass
-
+#return first line
 def getColumns(sheet):
 	path=str( createFolder())
 	logpath = str( createLogs(path))
@@ -196,10 +178,7 @@ def getColumns(sheet):
 		try:#necessary or else db attributes will look funny 
 			sheet.col_values(colnum)[0].encode('ascii')
 			nc = sheet.col_values(colnum)[0].split('|')
-			i = 0
-			while i < len(nc):
-				nc[i] = nc[i].replace(" ","_").replace("(","").replace(")","")
-				i+=1
+			isNametATableName(nc[0])
 			namecols.append(nc)
 	
 		except (UnicodeError):
@@ -230,7 +209,7 @@ if __name__ == '__main__':
 		allshnames = wb.sheet_names()
 		
 		for s in allshnames:
-			isSheetATableName(s)
+			isNametATableName(s)
 		
 		allsheets = wb.sheets()
 		logging.info("Successfully opened the sheets")
@@ -266,7 +245,7 @@ if __name__ == '__main__':
 			for i in allshnames:
 				pk = []
 				zeid = "id"
-				f.write('\ndb.define_table("'+str(i).encode('utf8')+'"')
+				f.write('\ndb.define_table("'+str(i).encode('utf-8')+'"')
 				for j in allcolumns[cptC]:
 					
 					#nameColumn should always be first element
@@ -281,7 +260,7 @@ if __name__ == '__main__':
 						elif "reference=" in h:
 							ref.append(i+"/"+h.split("=")[1])		
 						elif (("type='integer'" == h) or ("type='float'" == h) or ("type='string'" == h)) :
-								s+=","+h.encode('utf8')
+								s+=","+h.encode('utf-8')
 					f.write(',Field("'+j[0].encode('utf8')+'"'+s+')')
 							
 				zeids.append(zeid+"/"+i)
