@@ -261,14 +261,14 @@ if __name__ == '__main__':
 							ref.append(i+"/"+h.split("=")[1])		
 						elif (("type='integer'" == h) or ("type='float'" == h) or ("type='string'" == h)) :
 								s+=","+h.encode('utf-8')
-					f.write(',Field("'+j[0].encode('utf8')+'"'+s+')')
+					f.write(',Field("'+j[0].encode('utf-8')+'"'+s+')')
 							
 				zeids.append(zeid+"/"+i)
 				cptC += 1
 				if len(pk) > 0:
-					f.write(',primarykey=["'+pk[0].encode('utf8')+'"')
+					f.write(',primarykey=["'+pk[0].encode('utf-8')+'"')
 					for pki in pk[+1:]:
-						f.write(',"'+pki.encode('utf8')+'"')
+						f.write(',"'+pki.encode('utf-8')+'"')
 					f.write(']')
 				f.write(')')
 				
@@ -287,9 +287,9 @@ if __name__ == '__main__':
 						realid = z.split("/")[0]
 				# ___ means reference table
 				nameref= s[0]+"___"+s[1]
-				f.write('\ndb.define_table("'+(nameref).encode('utf8')+'",Field("'+s[0].encode('utf8')+'",type="integer"),Field("'+s[1].encode('utf8')+'",type="integer"),primarykey=["'+s[0].encode('utf8')+'","'+s[1].encode('utf8')+'"])')
+				f.write('\ndb.define_table("'+(nameref).encode('utf-8')+'",Field("'+s[0].encode('utf-8')+'",type="integer"),Field("'+s[1].encode('utf-8')+'",type="integer"),primarykey=["'+s[0].encode('utf-8')+'","'+s[1].encode('utf-8')+'"])')
 				# boo links tables for sqlform.grid
-				f.write('\ndef boo'+str(idx)+'(value,row,db):\n    rows = db((db.'+(nameref).encode('utf8')+'.'+s[0]+' == row.id)&(db.'+(nameref).encode('utf8')+'.'+s[1]+' == db.'+s[1]+'.'+realid.encode('utf8')+')).select(db.'+s[1]+'.ALL)')
+				f.write('\ndef boo'+str(idx)+'(value,row,db):\n    rows = db((db.'+(nameref).encode('utf-8')+'.'+s[0]+' == row.id)&(db.'+(nameref).encode('utf-8')+'.'+s[1]+' == db.'+s[1]+'.'+realid.encode('utf-8')+')).select(db.'+s[1]+'.ALL)')
 				f.write('\n    t=["w2p_odd odd","w2p_even even"]')
 				f.write('\n    return TABLE(*[TR(r.'+s[1]+', _class=t[idx%2]) for idx,r in enumerate(rows)])')
 	
@@ -297,7 +297,7 @@ if __name__ == '__main__':
 			#getDb -> called from default.py to get the same db as db.py
 			f.write('\ndef getDb():\n    from os import path\n    module_path=os.path.abspath(os.path.dirname(__file__))\n    dbpath = module_path + "/../databases"\n    db_name = "storage.sqlite"\n    db = DAL("sqlite://"+ db_name ,folder=dbpath, auto_import=True)\n    return db')
 			#getTable -> called from default.py to get the table generated
-			f.write('\ndef getTable(db):\n    return db.'+str(allshnames[0]).encode('utf8'))
+			f.write('\ndef getTable(db):\n    return db.'+str(allshnames[0]).encode('utf-8'))
 			
 			### Defining tables end
 			
@@ -506,9 +506,9 @@ if __name__ == '__main__':
 				else:
 					f.write("\n    form2=''")
 				f.write("\n    plot=DIV('')")
-				f.write('\n    if len(request.get_vars)>1:')
+				f.write('\n    if len(request.get_vars)>0:')
 				f.write("\n        vars = request.get_vars.keys()")
-				f.write('\n        plot=DIV(vars)')
+				f.write('\n        plot=DIV(*[P(v) for v in vars])')
 				f.write('\n    records=SQLFORM.grid(table,paginate=10,maxtextlength=256)')
 				f.write('\n    return dict(form1=form1, form2=form2, plot=plot, records=records)')
 				
