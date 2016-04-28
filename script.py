@@ -500,7 +500,7 @@ if __name__ == '__main__':
 				for c in getColumns(wb.sheet_by_name(e)):
 					if (("type='integer'" in c) or( "type='float'" in c)):
 						s+="DIV(LABEL('"+c[0]+"'),INPUT(_name='"+c[0]+"',_type='checkbox'),_class='row'),"
-				s+="DIV(LABEL('Simple plot'),INPUT(_type='radio',_name='plot',_value='plot' ,value='plot'),LABEL('Histogram'),INPUT(_type='radio',_name='plot',_value='hist'),_class='row'),"
+				s+="DIV(LABEL('Simple plot'),INPUT(_type='radio',_name='plot',_value='plot' ,value='plot'),LABEL('Histogram'),INPUT(_type='radio',_name='plot',_value='hist'),LABEL('Subplots'),INPUT(_type='radio',_name='plot',_value='sub'),_class='row'),"
 				s+="INPUT(_type='submit',_class='btn btn-primary'),_class='form-horizontal',_action='',_method='post')"
 				if "DIV" in s:
 					f.write(s)
@@ -521,11 +521,16 @@ if __name__ == '__main__':
 				f.write("\n            plt.hist(db.executesql("+'"'+'Select '+'"+'+'s'+'+"'+' from '+e+'"))')
 				f.write("\n            plt.xlabel('Value')")
 				f.write("\n            plt.ylabel('Number')")
-				f.write("\n        else:")
+				f.write("\n        elif typeplot == 'sub' :")
+				f.write("\n            for idx,item in enumerate(s.split(',')) :")
+				f.write("\n                plt.subplot(len(s.split(',')),1,idx+1)")
+				f.write("\n                plt.plot(db.executesql("+'"'+'Select '+'"+'+'item'+'+"'+' from '+e+'"))')
+				f.write("\n                plt.ylabel(item+' (Value)')")
+				f.write("\n            plt.xlabel('Number')")
+				f.write("\n        else :")
 				f.write("\n            plt.xlabel('Number')")
 				f.write("\n            plt.ylabel('Value')")
 				f.write("\n            plt.plot(db.executesql("+'"'+'Select '+'"+'+'s'+'+"'+' from '+e+'"))')
-				
 				f.write("\n        plt.title('Plot of "+e+" with '+s)")
 				f.write("\n        plt.savefig('applications/TEMPLATE/static/foo.png')")
 				f.write('\n        plt.clf()')
