@@ -500,23 +500,35 @@ if __name__ == '__main__':
 				for c in getColumns(wb.sheet_by_name(e)):
 					if (("type='integer'" in c) or( "type='float'" in c)):
 						s+="DIV(LABEL('"+c[0]+"'),INPUT(_name='"+c[0]+"',_type='checkbox'),_class='row'),"
-				s+="INPUT(_type='submit',_class='btn btn-primary'),_class='form-horizontal',_action='',_method='get')"
+				s+="DIV(LABEL('Simple plot'),INPUT(_type='radio',_name='plot',_value='plot' ,value='plot'),LABEL('Histogram'),INPUT(_type='radio',_name='plot',_value='hist'),_class='row'),"
+				s+="INPUT(_type='submit',_class='btn btn-primary'),_class='form-horizontal',_action='',_method='post')"
 				if "DIV" in s:
 					f.write(s)
 				else:
 					f.write("\n    form2=''")
 				f.write("\n    plot=DIV('')")
-				f.write('\n    if len(request.get_vars)>0 :')
-				f.write("\n        vars = request.get_vars.keys()")
+				f.write('\n    if (len(request.post_vars)>1):')
+				f.write("\n        vars = request.post_vars.keys()")
 				f.write('\n        s=""')
+				f.write("\n        typeplot=''")   
 				f.write("\n        for v in vars :")
-				f.write("\n            s+=str(v)+','")
+				f.write("\n            if v == 'plot' :")
+				f.write("\n                typeplot = request.post_vars.plot")
+				f.write("\n            else :")
+				f.write("\n                s+=str(v)+','")
 				f.write("\n        s=s[:-1]")
-				f.write("\n        plt.plot(db.executesql("+'"'+'Select '+'"+'+'s'+'+"'+' from '+e+'"))')
-				f.write("\n        plt.xlabel('Number')")
-				f.write("\n        plt.ylabel('Value')")
-				f.write("\n        plt.title('Plot of "+e+" with '+vars)")
+				f.write("\n        if typeplot == 'hist' :")
+				f.write("\n            plt.hist(db.executesql("+'"'+'Select '+'"+'+'s'+'+"'+' from '+e+'"))')
+				f.write("\n            plt.xlabel('Value')")
+				f.write("\n            plt.ylabel('Number')")
+				f.write("\n        else:")
+				f.write("\n            plt.xlabel('Number')")
+				f.write("\n            plt.ylabel('Value')")
+				f.write("\n            plt.plot(db.executesql("+'"'+'Select '+'"+'+'s'+'+"'+' from '+e+'"))')
+				
+				f.write("\n        plt.title('Plot of "+e+" with '+s)")
 				f.write("\n        plt.savefig('applications/TEMPLATE/static/foo.png')")
+				f.write('\n        plt.clf()')
 				f.write("\n        plot=IMG(_src=URL('static','foo.png'),_alt='plot')")
 				f.write('\n    records=SQLFORM.grid(table,paginate=10,maxtextlength=256)')
 				f.write('\n    return dict(form1=form1, form2=form2, plot=plot, records=records)')
