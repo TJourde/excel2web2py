@@ -287,7 +287,7 @@ if __name__ == '__main__':
 						realid = z.split("/")[0]
 				# ___ means reference table
 				nameref= s[0]+"___"+s[1]
-				f.write('\ndb.define_table("'+(nameref).encode('utf-8')+'",Field("'+s[0].encode('utf-8')+'",type="integer"),Field("'+s[1].encode('utf-8')+'",type="integer"),primarykey=["'+s[0].encode('utf-8')+'","'+s[1].encode('utf-8')+'"])')
+				f.write('\ndb.define_table("'+(nameref).encode('utf-8')+'",Field("'+s[0].encode('utf-8')+'",db.'+s[0]+'),Field("'+s[1].encode('utf-8')+'",db.'+s[1]+'),primarykey=["'+s[0].encode('utf-8')+'","'+s[1].encode('utf-8')+'"])')
 				# boo links tables for sqlform.grid
 				f.write('\ndef boo'+sys.argv[1].split('.')[0]+str(idx)+'(value,row,db):\n    rows = db((db.'+(nameref).encode('utf-8')+'.'+s[0]+' == row.id)&(db.'+(nameref).encode('utf-8')+'.'+s[1]+' == db.'+s[1]+'.'+realid.encode('utf-8')+')).select(db.'+s[1]+'.ALL)')
 				f.write('\n    t=["w2p_odd odd","w2p_even even"]')
@@ -501,7 +501,7 @@ if __name__ == '__main__':
 				else:
 					f.write("\n    form2=''")
 				f.write("\n    plot=DIV('')")
-				f.write('\n    if ((len(request.post_vars)>1) and ("makeplot" in request.post_vars)):')
+				f.write('\n    if ((len(request.post_vars)>2) and ("makeplot" in request.post_vars)):')
 				f.write("\n        vars = request.post_vars.keys()")
 				f.write("\n        vars.remove('makeplot')")
 				f.write('\n        s=""')

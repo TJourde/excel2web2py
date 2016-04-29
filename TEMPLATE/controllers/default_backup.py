@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import sys,subprocess
+import matplotlib.pyplot as plt
 # this file is released under public domain and you can use without limitations
 #########################################################################
 ## This is a sample controller
@@ -53,7 +54,7 @@ def call():
 def forming(table):
     form = SQLFORM(table)
     if form.process().accepted:
-        response.falsh = 'form accepted'
+        response.flash = 'form accepted'
     elif form.errors:
         response.flash = 'form has errors'
     return form
