@@ -25,23 +25,31 @@ th {
 {{else:}}
 {{pass}}
 <div class="container">
+	{{if session.login == 1:}}
 	<div class="row">
         <div id="web2py_user_form" class="jumbotron">
-			{{if session.login == 1:}}
-            <h2>{{T('Insert new row')}}</h2>
+            <h2>{{=T('Insert new row')}}</h2>
             {{=form1}}
-            <h2>{{T('Select columns to create a plot')}}</h2>
+        </div>
+    </div>
+    <div class="row">
+        <div id="web2py_user_form2" class="jumbotron">
+			 <h2>{{=T('Select columns to create a plot')}}</h2>
             {{=form2}}
             {{=plot}}
-            {{else:}}
-             <h2>{{T('Select columns to create a plot')}}</h2>
+        </div>
+    </div>
+    {{else:}}
+    <div class="row">
+        <div id="web2py_user_form2" class="jumbotron">
+			 <h2>{{=T('Select columns to create a plot')}}</h2>
             {{=form2}}
             {{=plot}}
             {{pass}}
         </div>
     </div>
     <div class="row">
-        <div id="web2py_user_form2" class="jumbotron text-center">
+        <div id="web2py_records" class="jumbotron text-center">
             <h2></h2>
             {{=records}}
         </div>

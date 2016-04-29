@@ -224,7 +224,7 @@ if __name__ == '__main__':
 			if os.name =="nt":
 				subprocess.check_call(["copy","%cd%"+"\..\\applications\\TEMPLATE\\models\\db_backup.py","%cd%"+"\..\\applications\\TEMPLATE\\models\\db.py"],shell=True)
 			else:
-				subprocess.check_call(["cp","-v","../applications/TEMPLATE/models/db_backup.py","../applications/TEMPLATE/models/db.py"])	
+				subprocess.check_call(["cp","-v","../applications/TEMPLATE/models/db_backup.py","../applications/TEMPLATE/models/db_"+sys.argv[1].split('.')[0]+".py"])	
 			logging.info("Successfully recover backup of db")
 		except subprocess.CalledProcessError as er:
 			logging.exception("Error while retrieving db_backup: " + er.message)
@@ -237,7 +237,7 @@ if __name__ == '__main__':
 
 		ref = [] #used also to write represent attr in default controller
 		zeids = []
-		with open("../applications/TEMPLATE/models/db.py","a") as f:
+		with open("../applications/TEMPLATE/models/db_"+sys.argv[1].split('.')[0]+".py","a") as f:
 			logging.info("Successfully opened db")
 			logging.info("Creating tables")
 			##Defining sheet table
@@ -289,7 +289,7 @@ if __name__ == '__main__':
 				nameref= s[0]+"___"+s[1]
 				f.write('\ndb.define_table("'+(nameref).encode('utf-8')+'",Field("'+s[0].encode('utf-8')+'",type="integer"),Field("'+s[1].encode('utf-8')+'",type="integer"),primarykey=["'+s[0].encode('utf-8')+'","'+s[1].encode('utf-8')+'"])')
 				# boo links tables for sqlform.grid
-				f.write('\ndef boo'+str(idx)+'(value,row,db):\n    rows = db((db.'+(nameref).encode('utf-8')+'.'+s[0]+' == row.id)&(db.'+(nameref).encode('utf-8')+'.'+s[1]+' == db.'+s[1]+'.'+realid.encode('utf-8')+')).select(db.'+s[1]+'.ALL)')
+				f.write('\ndef boo'+sys.argv[1].split('.')[0]+str(idx)+'(value,row,db):\n    rows = db((db.'+(nameref).encode('utf-8')+'.'+s[0]+' == row.id)&(db.'+(nameref).encode('utf-8')+'.'+s[1]+' == db.'+s[1]+'.'+realid.encode('utf-8')+')).select(db.'+s[1]+'.ALL)')
 				f.write('\n    t=["w2p_odd odd","w2p_even even"]')
 				f.write('\n    return TABLE(*[TR(r.'+s[1]+', _class=t[idx%2]) for idx,r in enumerate(rows)])')
 	
@@ -404,15 +404,7 @@ if __name__ == '__main__':
 			sys.exit("menu_backup cannot be found")
 			
 			
-		## Retrieve all existing tables'name
-		# keep files with table extension
-		# doesn't contain auth
-		extables = []
-		for e in allfiles:
-			if ((".table" in e) and ("auth" not in e ) and ( "___" not in e)):
-				#to make sure we get the real table's name, we remove the extension and keep what is after the hash key
-				#___ design reference table, we don't want them to show up
-				extables.append(e.split("_",1)[1].split(".")[0])
+		
 		
 		#if name file is in menucategory then no new category
 		newc = True
@@ -443,11 +435,12 @@ if __name__ == '__main__':
 			f.write("\n    response.menu += [")
 			s = ""
 			for l in listmenu:
+				print l
 				lsplit = l.split("|")
 				s += "\n        (T('"+lsplit[0]+"'), False, None, ["
 				for e in lsplit[+1:]:
 					tmp = e.strip("\n")
-					s +="\n            (T('"+tmp+"'), False, URL('default', '"+tmp+"')),"
+					s +="\n            (T('"+tmp+"'), False, URL('"+lsplit[0]+"', '"+tmp+"')),"
 				s=s[:-1]
 				s += "\n        ])"
 				s += ","
@@ -463,9 +456,9 @@ if __name__ == '__main__':
 		try:
 			logging.info("Trying to recover backup of default")
 			if os.name =="nt":
-				subprocess.check_call(["copy","%cd%"+"\..\\applications\\TEMPLATE\\controllers\\default_backup.py","%cd%"+"\..\\applications\\TEMPLATE\\controllers\\default.py"],shell=True)
+				subprocess.check_call(["copy","%cd%"+"\..\\applications\\TEMPLATE\\controllers\\default_backup.py","%cd%"+"\..\\applications\\TEMPLATE\\controllers\\"+sys.argv[1].split('.')[0]+".py"],shell=True)
 			else:
-				subprocess.check_call(["cp","-v","../applications/TEMPLATE/controllers/default_backup.py","../applications/TEMPLATE/controllers/default.py"])
+				subprocess.check_call(["cp","-v","../applications/TEMPLATE/controllers/default_backup.py","../applications/TEMPLATE/controllers/"+sys.argv[1].split('.')[0]+".py"])
 			
 			
 			logging.info("Successfully recover backup of default")
@@ -474,41 +467,43 @@ if __name__ == '__main__':
 			sys.exit("default_backup cannot be found")
 
 		#used for calling scriptInit once page has loaded
-		with open("../applications/TEMPLATE/controllers/default.py","a") as f:
-			logging.info("Successfully opened default")
+		with open("../applications/TEMPLATE/controllers/"+sys.argv[1].split('.')[0]+".py","a") as f:
+			logging.info("Successfully opened "+sys.argv[1].split('.')[0]+".py")
 			# first, we define all links to views from this file
-			for e in extables + allshnames: 
-				f.write('\ndef '+e+'():')
+			for nameTable in allshnames: 
+				f.write('\ndef '+nameTable+'():')
 				f.write('\n    db = getDb()')
-				f.write('\n    table = db.'+e)
+				f.write('\n    table = db.'+nameTable)
 				# necessary to differentiate to prevent dal errors
-				if e in allshnames:
-					for idx,r in enumerate(ref):
-						s=r.split("/")
-						for c in getColumns(wb.sheet_by_name(e)):
-							if s[1] in c :
-								f.write('\n    db.'+s[0]+'.'+s[1]+'.represent = lambda val,row:boo'+str(idx)+'(val,row,db)')
-						f.write('\n    rows = db(table).select()')
-						f.write('\n    if (len(rows) == 0):')
-						f.write('\n        initData()')
-				else:
-					f.write('\n    rows = db(table).select()')
+				#for each reference
+				for idx,r in enumerate(ref):
+					s=r.split("/")
+					#for each column of the table
+					for c in getColumns(wb.sheet_by_name(nameTable)):
+						if ((s[1] == c[0])) :
+							f.write('\n    db.'+s[0]+'.'+s[1]+'.represent = lambda val,row:boo'+sys.argv[1].split('.')[0]+str(idx)+'(val,row,db)')
+							f.write('\n    db.'+s[0]+'.'+s[1]+'.requires = IS_IN_DB(db,"'+s[1]+'.'+s[1]+'",multiple=True)')
+				f.write('\n    rows = db(table).select()')
+				f.write('\n    if (len(rows) == 0):')
+				f.write('\n        initData()')
+				f.write('\n    rows = db(table).select()')
 					
 				f.write('\n    form1 = forming(table)')
 				
 				s="\n    form2 = FORM("
-				for c in getColumns(wb.sheet_by_name(e)):
+				for c in getColumns(wb.sheet_by_name(nameTable)):
 					if (("type='integer'" in c) or( "type='float'" in c)):
 						s+="DIV(LABEL('"+c[0]+"'),INPUT(_name='"+c[0]+"',_type='checkbox'),_class='row'),"
 				s+="DIV(LABEL('Simple plot'),INPUT(_type='radio',_name='plot',_value='plot' ,value='plot'),LABEL('Histogram'),INPUT(_type='radio',_name='plot',_value='hist'),LABEL('Subplots'),INPUT(_type='radio',_name='plot',_value='sub'),_class='row'),"
-				s+="INPUT(_type='submit',_class='btn btn-primary'),_class='form-horizontal',_action='',_method='post')"
+				s+="INPUT(_type='submit',_class='btn btn-primary',_name='makeplot'),_class='form-horizontal',_action='',_method='post')"
 				if "DIV" in s:
 					f.write(s)
 				else:
 					f.write("\n    form2=''")
 				f.write("\n    plot=DIV('')")
-				f.write('\n    if (len(request.post_vars)>1):')
+				f.write('\n    if ((len(request.post_vars)>1) and ("makeplot" in request.post_vars)):')
 				f.write("\n        vars = request.post_vars.keys()")
+				f.write("\n        vars.remove('makeplot')")
 				f.write('\n        s=""')
 				f.write("\n        typeplot=''")   
 				f.write("\n        for v in vars :")
@@ -518,20 +513,20 @@ if __name__ == '__main__':
 				f.write("\n                s+=str(v)+','")
 				f.write("\n        s=s[:-1]")
 				f.write("\n        if typeplot == 'hist' :")
-				f.write("\n            plt.hist(db.executesql("+'"'+'Select '+'"+'+'s'+'+"'+' from '+e+'"))')
+				f.write("\n            plt.hist(db.executesql("+'"'+'Select '+'"+'+'s'+'+"'+' from '+nameTable+'"))')
 				f.write("\n            plt.xlabel('Value')")
 				f.write("\n            plt.ylabel('Number')")
 				f.write("\n        elif typeplot == 'sub' :")
 				f.write("\n            for idx,item in enumerate(s.split(',')) :")
 				f.write("\n                plt.subplot(len(s.split(',')),1,idx+1)")
-				f.write("\n                plt.plot(db.executesql("+'"'+'Select '+'"+'+'item'+'+"'+' from '+e+'"))')
+				f.write("\n                plt.plot(db.executesql("+'"'+'Select '+'"+'+'item'+'+"'+' from '+nameTable+'"))')
 				f.write("\n                plt.ylabel(item+' (Value)')")
 				f.write("\n            plt.xlabel('Number')")
 				f.write("\n        else :")
 				f.write("\n            plt.xlabel('Number')")
 				f.write("\n            plt.ylabel('Value')")
-				f.write("\n            plt.plot(db.executesql("+'"'+'Select '+'"+'+'s'+'+"'+' from '+e+'"))')
-				f.write("\n        plt.title('Plot of "+e+" with '+s)")
+				f.write("\n            plt.plot(db.executesql("+'"'+'Select '+'"+'+'s'+'+"'+' from '+nameTable+'"))')
+				f.write("\n        plt.title('Plot of "+nameTable+" with '+s)")
 				f.write("\n        plt.savefig('applications/TEMPLATE/static/foo.png')")
 				f.write('\n        plt.clf()')
 				f.write("\n        plot=IMG(_src=URL('static','foo.png'),_alt='plot')")
@@ -544,19 +539,20 @@ if __name__ == '__main__':
 			f.write('\n    try:\n        subprocess.check_call(["python",'+'"'+str(script_path)+"/scriptInit.py"+'","'+str(script_path)+"/"+sys.argv[1]+'"'+"])")
 			f.write('\n    except subprocess.CalledProcessError:\n        sys.exit("Error : scriptInit.py could not be reached")')
 			
-		logging.info("Writing in default finished")
+		logging.info("Writing in "" finished")
 		logging.info("Closing file")
 		
 		###create new views
 		try:
 			logging.info("Trying to create views")
-			for e in allshnames:
+			for nameTable in allshnames:
 				if os.name =="nt":
-					subprocess.check_call(["copy","%cd%"+"\..\\applications\\TEMPLATE\\views\\default\\table.html","%cd%"+"\..\\applications\\TEMPLATE\\views\\default\\"+e+".html"],shell=True)
+					subprocess.check_call(["copy","%cd%"+"\..\\applications\\TEMPLATE\\views\\default\\table.html","%cd%"+"\..\\applications\\TEMPLATE\\views\\"+sys.argv[1].split('.')[0]+"\\"+nameTable+".html"],shell=True)
 				else:
-					subprocess.check_call(["cp","-v","../applications/TEMPLATE/views/default/table.html","../applications/TEMPLATE/views/default/"+e+".html"])
+					subprocess.call(["mkdir","-v","../applications/TEMPLATE/views/"+sys.argv[1].split('.')[0]+"/"])
+					subprocess.check_call(["cp","-v","../applications/TEMPLATE/views/default/table.html","../applications/TEMPLATE/views/"+sys.argv[1].split('.')[0]+"/"+nameTable+".html"])
 			
-				logging.info("Successfully created view :"+e)
+				logging.info("Successfully created view :"+nameTable)
 		except subprocess.CalledProcessError as er:
 			logging.exception("Error while retrieving table.html : "+er.message)
 			sys.exit("table.html cannot be found")
