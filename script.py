@@ -289,7 +289,8 @@ if __name__ == '__main__':
 				nameref= s[0]+"___"+s[1]
 				f.write('\ndb.define_table("'+(nameref).encode('utf-8')+'",Field("'+s[0].encode('utf-8')+'",db.'+s[0]+'),Field("'+s[1].encode('utf-8')+'",db.'+s[1]+'),primarykey=["'+s[0].encode('utf-8')+'","'+s[1].encode('utf-8')+'"])')
 				# boo links tables for sqlform.grid
-				f.write('\ndef boo'+sys.argv[1].split('.')[0]+str(idx)+'(value,row,db):\n    rows = db((db.'+(nameref).encode('utf-8')+'.'+s[0]+' == row.id)&(db.'+(nameref).encode('utf-8')+'.'+s[1]+' == db.'+s[1]+'.'+realid.encode('utf-8')+')).select(db.'+s[1]+'.ALL)')
+				f.write('\ndef boo'+sys.argv[1].split('.')[0]+str(idx)+'(value,row,db):')
+				f.write('\n    rows = db((db.'+(nameref).encode('utf-8')+'.'+s[0]+' == row.id)&(db.'+(nameref).encode('utf-8')+'.'+s[1]+' == db.'+s[1]+'.'+realid.encode('utf-8')+')).select(db.'+s[1]+'.ALL)')
 				f.write('\n    t=["w2p_odd odd","w2p_even even"]')
 				f.write('\n    return TABLE(*[TR(r.'+s[1]+', _class=t[idx%2]) for idx,r in enumerate(rows)])')
 	
@@ -347,7 +348,7 @@ if __name__ == '__main__':
 						for s in alltables:
 							delTable= ""
 							for f in allfiles:
-								#tmp solution don't know if always 7
+								#7 is the last digit of the hashkey of the files table
 								if "7_"+str(s)+'.table' in f:
 									
 									dropTable(s,c)
@@ -435,7 +436,6 @@ if __name__ == '__main__':
 			f.write("\n    response.menu += [")
 			s = ""
 			for l in listmenu:
-				print l
 				lsplit = l.split("|")
 				s += "\n        (T('"+lsplit[0]+"'), False, None, ["
 				for e in lsplit[+1:]:
@@ -482,15 +482,13 @@ if __name__ == '__main__':
 					for c in getColumns(wb.sheet_by_name(nameTable)):
 						if ((s[1] == c[0])) :
 							f.write('\n    db.'+s[0]+'.'+s[1]+'.represent = lambda val,row:boo'+sys.argv[1].split('.')[0]+str(idx)+'(val,row,db)')
-							f.write('\n    db.'+s[0]+'.'+s[1]+'.requires = IS_IN_DB(db,"'+s[1]+'.'+s[1]+'",multiple=True)')
+							f.write('\n    db.'+s[0]+'.'+s[1]+'.requires = IS_IN_DB(db,"'+s[1]+'.id","%('+s[1]+')s",multiple=True)')
 				f.write('\n    rows = db(table).select()')
 				f.write('\n    if (len(rows) == 0):')
 				f.write('\n        initData()')
 				f.write('\n    rows = db(table).select()')
-					
-				f.write('\n    form1 = forming(table)')
 				
-				s="\n    form2 = FORM("
+				s="\n    form = FORM("
 				for c in getColumns(wb.sheet_by_name(nameTable)):
 					if (("type='integer'" in c) or( "type='float'" in c)):
 						s+="DIV(LABEL('"+c[0]+"'),INPUT(_name='"+c[0]+"',_type='checkbox'),_class='row'),"
@@ -499,7 +497,7 @@ if __name__ == '__main__':
 				if "DIV" in s:
 					f.write(s)
 				else:
-					f.write("\n    form2=''")
+					f.write("\n    form=''")
 				f.write("\n    plot=DIV('')")
 				f.write('\n    if ((len(request.post_vars)>2) and ("makeplot" in request.post_vars)):')
 				f.write("\n        vars = request.post_vars.keys()")
@@ -531,7 +529,7 @@ if __name__ == '__main__':
 				f.write('\n        plt.clf()')
 				f.write("\n        plot=IMG(_src=URL('static','foo.png'),_alt='plot')")
 				f.write('\n    records=SQLFORM.grid(table,paginate=10,maxtextlength=256)')
-				f.write('\n    return dict(form1=form1, form2=form2, plot=plot, records=records)')
+				f.write('\n    return dict(form=form, plot=plot, records=records)')
 				
 			# used in case main table is empty	
 			f.write('\ndef initData():')
