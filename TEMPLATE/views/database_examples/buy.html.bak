@@ -1,7 +1,0 @@
-{{extend 'layout.html'}}
-<h1>Purchase form</h1>
-  {{=form}}
-  [ {{=A('your can Manage Transactions here',_href=URL('manage_transactions'))}} ]
-<!--  <h2>Current purchases</h2>
-<p>{{=records}}</p>
--->

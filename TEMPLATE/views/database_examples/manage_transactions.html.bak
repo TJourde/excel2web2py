@@ -1,8 +1,0 @@
-{{extend 'layout.html'}}
-
-<h1>Transactions</h1>
-{{=grid}}
-
-<h2>
-    
-</h2>

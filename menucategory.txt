@@ -1,4 +1,0 @@
-
-
-Test|A|B
-Inventaireproduitschimiques|Produits_chimiques|Mentions_de_danger|Conseils_de_prudence|Link
