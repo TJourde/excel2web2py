@@ -91,68 +91,7 @@ def isNametATableName(name):
 			sys.exit("Name has special characters: "+ name )
 		
 	
-#execute sql request to insert data
-def insertRowsData(nameTable,sheet,cursor):
-	path=str( createFolder())
-	logpath = str( createLogs(path))
-	logging.basicConfig(filename=logpath,level=logging.DEBUG)
-	query = ""
-	idcpt = 0
-	firstline=True
-	isThereId = False
-	ref = []
-	##insert data of sheets
-	for rownum in range(sheet.nrows):
-		if(not firstline):
-			query = "INSERT INTO "+nameTable+" VALUES ("
-			if not isThereId:
-				query += str(idcpt)+","
-			for rowval in sheet.row_values(rownum):
-				#for null value
-				try:
-					query+='"'+rowval+'"'+','
-				except:
-					query+='"'+str(rowval)+'"'+','
-			query=query[:-1]
-			query+=')'
-			idcpt+=1
-		else:
-			if any("idthis" in s for s in sheet.row_values(rownum)):
-				isThereId = True
-			cpt = 0
-			for s in sheet.row_values(rownum):
-				if ("reference=" in s ):
-					ref.append(str(cpt)+'/'+s.split("=")[1])
-				cpt+=1
-			firstline=False
-		try:
-			logging.info(query)
-			cursor.execute(query)
-		except sqlite3.Error as er:
-			print("Ins:Smth went wrong")
-			logging.warning( er.message)
-			pass			
-			#sys.exit("Erreur insertion")
-	
-	## insert data on reference tables
-	for i in ref:
-		cptc=0
-		j = i.split("/")
-		query= "INSERT INTO "+nameTable+"___"+j[1]+" VALUES ("
-		for colval in sheet.col_values(int(j[0]))[+1:]:
-			ncode = colval.split('|')
-			if(len(ncode)>0):
-				for n in ncode:
-					if n != "":
-						try:
-							logging.info(query+str(cptc)+','+str(n)+')')
-							cursor.execute(query+str(cptc)+','+str(n)+')')	
-						except sqlite3.Error as er:
-							print("Ref:Smth went wrong")
-							logging.warning(er.message)
-							pass
-							#sys.exit("Erreur insertion")
-			cptc+=1
+
 
 def dropTable (nameTable,cursor):
 	path=str( createFolder())
@@ -177,6 +116,7 @@ def getColumns(sheet):
 	for colnum in range(sheet.ncols):
 		try:#necessary or else db attributes will look funny 
 			sheet.col_values(colnum)[0].encode('ascii')
+			# first line of that column
 			nc = sheet.col_values(colnum)[0].split('|')
 			isNametATableName(nc[0])
 			namecols.append(nc)
@@ -185,6 +125,42 @@ def getColumns(sheet):
 			logging.exception(sheet.col_values(colnum)[0]+" Column's name couldn't be encoded in ascii")
 			sys.exit(sheet.col_values(colnum)[0]+" Error: Column's name couldn't be encoded in ascii")
 	return namecols
+
+def createDict(ref,nameFile,sheet,idx,len_refs):
+	
+	path=str( createFolder())
+	logpath = str( createLogs(path))
+	logging.basicConfig(filename=logpath,level=logging.DEBUG)
+	
+	with open(nameFile,"a") as f:
+		##Defining reference dict
+		s=r.split('/')
+				
+		# boo links to dict for sqlform.grid
+		nameFunc = sys.argv[1].split('/')[-1].split('.')[0]
+		f.write('\ndef boo'+str(nameFunc)+str(idx)+'(value,row,db):')
+		f.write('\n    listOfRefs = []')
+		f.write('\n    listAttr=[]')
+		f.write('\n    rowvals = row.'+s[1]+'.split("|")')
+		f.write('\n    for val in rowvals :')
+		f.write('\n        res=db(db["'+s[1]+'"].id == val).select()')
+		f.write('\n        listValAttr=[]')
+		f.write('\n        for row in res:')
+		f.write('\n            for attr in row:')
+		f.write('\n                if attr != "id":')
+        #there are attr that are also update or delete record object  that need to be taken in account
+		f.write('\n                    if ((type(row[attr]) is str) or (type(row[attr]) is int) or (type(row[attr]) is float)):')
+		f.write('\n                        if attr not in listAttr:')
+		f.write('\n                            listAttr.append(attr)')
+		f.write('\n                        listValAttr.append(row[attr])')
+		f.write('\n        listOfRefs.append(listValAttr)')
+		f.write('\n    listOfRefs.insert(0,listAttr)')
+		f.write('\n    t=["w2p_odd odd","w2p_even even"]')
+		f.write('\n    return TABLE(*[TR(r, _class=t[idx%2]) for idx,r in enumerate(listOfRefs)])')
+
+            
+		
+		
 
 #prevent execution on import from scriptInit
 if __name__ == '__main__':
@@ -271,28 +247,9 @@ if __name__ == '__main__':
 						f.write(',"'+pki.encode('utf-8')+'"')
 					f.write(']')
 				f.write(')')
-				
-			#table + generated table [:] prevent copy reference	
-			alltables = allshnames[:]
 			
-			##Defining reference table
-			for idx,r in enumerate(ref):
-				s=r.split("/")
-				# ___ means reference table
-				alltables.append(s[0]+"___"+s[1])
-				realid = "id"
-				
-				for z in zeids:
-					if z.split("/")[1] == s[1]:
-						realid = z.split("/")[0]
-				# ___ means reference table
-				nameref= s[0]+"___"+s[1]
-				f.write('\ndb.define_table("'+(nameref).encode('utf-8')+'",Field("'+s[0].encode('utf-8')+'",db.'+s[0]+'),Field("'+s[1].encode('utf-8')+'",db.'+s[1]+'),primarykey=["'+s[0].encode('utf-8')+'","'+s[1].encode('utf-8')+'"])')
-				# boo links tables for sqlform.grid
-				f.write('\ndef boo'+sys.argv[1].split('.')[0]+str(idx)+'(value,row,db):')
-				f.write('\n    rows = db((db.'+(nameref).encode('utf-8')+'.'+s[0]+' == row.id)&(db.'+(nameref).encode('utf-8')+'.'+s[1]+' == db.'+s[1]+'.'+realid.encode('utf-8')+')).select(db.'+s[1]+'.ALL)')
-				f.write('\n    t=["w2p_odd odd","w2p_even even"]')
-				f.write('\n    return TABLE(*[TR(r.'+s[1]+', _class=t[idx%2]) for idx,r in enumerate(rows)])')
+
+
 	
 			##Defining some heplful functions
 			#getDb -> called from default.py to get the same db as db.py
@@ -312,7 +269,7 @@ if __name__ == '__main__':
 			
 
 			##Test if table's name is a file in databases
-			for i in alltables:
+			for i in allshnames:
 				if not tableFile:
 					for f in allfiles:
 						if not tableFile:
@@ -345,7 +302,7 @@ if __name__ == '__main__':
 						logging.info("Success: connected to database")
 						drop = True
 						
-						for s in alltables:
+						for s in allshnames:
 							delTable= ""
 							for f in allfiles:
 								#7 is the last digit of the hashkey of the files table
@@ -391,66 +348,7 @@ if __name__ == '__main__':
 			logging.info("Writing in db finished")
 			logging.info("Closing file")
 			
-		### Making menu
-		try:
-			logging.info("Trying to recover backup of menu")
-			if os.name =="nt":
-				subprocess.check_call(["copy","%cd%"+"\..\\applications\\TEMPLATE\\models\\backup_menu.py","%cd%"+"\..\\applications\\TEMPLATE\\models\\menu.py"],shell=True)
-			else:
-				subprocess.check_call(["cp","-v","../applications/TEMPLATE/models/backup_menu.py","../applications/TEMPLATE/models/menu.py"])
-			
-			logging.info("Successfully recover backup of menu")
-		except subprocess.CalledProcessError as er:
-			logging.exception("Error while retrieving backup_menu : "+er.message)
-			sys.exit("menu_backup cannot be found")
-			
-			
-		
-		
-		#if name file is in menucategory then no new category
-		newc = True
-		with open ("menucategory.txt") as f:
-			for line in f:
-				if str(sys.argv[1].split('.')[0]) in line :
-					newc = False
-		if newc :
-			with open ("menucategory.txt","a") as f:
-				f.write("\n"+sys.argv[1].split('.')[0])
-				for n in allshnames:
-					f.write('|'+n)
-		
-		#get all menu categories
-		listmenu = []
-		with open ("menucategory.txt") as f:
-			for line in f:
-				listmenu.append(str(line))	
-				
-		#we ignore empty lines
-		listmenu = [val for val in listmenu if val != '\n']
-		
-		## Shortcuts
-		
-		with open("../applications/TEMPLATE/models/menu.py","a") as f:
-			logging.info("Writing menu shortcuts")
-			f.write("def _():\n    app = request.application\n    ctr = request.controller")
-			f.write("\n    response.menu += [")
-			s = ""
-			for l in listmenu:
-				lsplit = l.split("|")
-				s += "\n        (T('"+lsplit[0]+"'), False, None, ["
-				for e in lsplit[+1:]:
-					tmp = e.strip("\n")
-					s +="\n            (T('"+tmp+"'), False, URL('"+lsplit[0]+"', '"+tmp+"')),"
-				s=s[:-1]
-				s += "\n        ])"
-				s += ","
-			s = s[:-1]
-			s+=("\n    ]\n_()")
-			f.write(s)
-            
-			logging.info("Menu done")
-			
-		### Making menu end
+
 		
 		### Insert Rows
 		try:
@@ -466,10 +364,34 @@ if __name__ == '__main__':
 			logging.exception("Error while retrieving default_backup : " + er.message)
 			sys.exit("default_backup cannot be found")
 
+		###Dicts
+		#we need to define boo functions before the views fuctions
+		logging.info("Creating dicts")
+
+		nameController = sys.argv[1].split('.')[0]
+
+		cptC=0
+		for i in allshnames:
+			refs=[]
+			for j in allcolumns[cptC]:
+				for h in j[+1:]:
+					if "reference=" in h:
+						refs.append(i+"/"+h.split("=")[1])
+			if refs is not None:
+				for idx,r in enumerate(refs):
+					createDict(r,"../applications/TEMPLATE/controllers/"+nameController+".py",wb.sheet_by_name(r.split('/')[1]),idx,len(refs))
+			cptC += 1
+
+		logging.info("Dicts written")
+
+
+
 		#used for calling scriptInit once page has loaded
-		with open("../applications/TEMPLATE/controllers/"+sys.argv[1].split('.')[0]+".py","a") as f:
-			logging.info("Successfully opened "+sys.argv[1].split('.')[0]+".py")
-			# first, we define all links to views from this file
+		with open("../applications/TEMPLATE/controllers/"+nameController+".py","a") as f:
+			logging.info("Successfully opened "+nameController+".py")
+			
+			
+			# then, we define all links to views from this file
 			for nameTable in allshnames: 
 				f.write('\ndef '+nameTable+'():')
 				f.write('\n    db = getDb()')
@@ -482,7 +404,6 @@ if __name__ == '__main__':
 					for c in getColumns(wb.sheet_by_name(nameTable)):
 						if ((s[1] == c[0])) :
 							f.write('\n    db.'+s[0]+'.'+s[1]+'.represent = lambda val,row:boo'+sys.argv[1].split('.')[0]+str(idx)+'(val,row,db)')
-							f.write('\n    db.'+s[0]+'.'+s[1]+'.requires = IS_IN_DB(db,"'+s[1]+'.id","%('+s[1]+')s",multiple=True)')
 				f.write('\n    rows = db(table).select()')
 				f.write('\n    if (len(rows) == 0):')
 				f.write('\n        initData()')
@@ -528,7 +449,7 @@ if __name__ == '__main__':
 				f.write("\n        plt.savefig('applications/TEMPLATE/static/foo.png')")
 				f.write('\n        plt.clf()')
 				f.write("\n        plot=IMG(_src=URL('static','foo.png'),_alt='plot')")
-				f.write('\n    records=SQLFORM.grid(table,paginate=10,maxtextlength=256)')
+				f.write('\n    records=SQLFORM.grid(table,paginate=10,maxtextlength=256,showbuttontext=False)')
 				f.write('\n    return dict(form=form, plot=plot, records=records)')
 				
 			# used in case main table is empty	
@@ -556,6 +477,62 @@ if __name__ == '__main__':
 			sys.exit("table.html cannot be found")
 			
 		###create new views end
+		
+		
+		### Making menu
+		try:
+			logging.info("Trying to recover backup of menu")
+			if os.name =="nt":
+				subprocess.check_call(["copy","%cd%"+"\..\\applications\\TEMPLATE\\models\\backup_menu.py","%cd%"+"\..\\applications\\TEMPLATE\\models\\menu.py"],shell=True)
+			else:
+				subprocess.check_call(["cp","-v","../applications/TEMPLATE/models/backup_menu.py","../applications/TEMPLATE/models/menu.py"])
+			
+			logging.info("Successfully recover backup of menu")
+		except subprocess.CalledProcessError as er:
+			logging.exception("Error while retrieving backup_menu : "+er.message)
+			sys.exit("menu_backup cannot be found")
+			
+			
+		
+		listmenu=[]
+		allviews = os.listdir('../applications/TEMPLATE/views')
+		for view in allviews:
+			if ((os.path.isdir('../applications/TEMPLATE/views/'+view)) and ('default' not in view)):
+				allhtml = os.listdir('../applications/TEMPLATE/views/'+view)
+				submenus = []
+				submenus.append(str(view))
+				#for some reason, list dir display files in the chronological order in reverse
+				for html in reversed(allhtml):
+					#to make sure it is a view
+					if html.endswith('.html'):
+						submenus.append(str(html.split('.')[0]))
+				listmenu.append(submenus)
+				
+		
+		## Shortcuts
+		with open("../applications/TEMPLATE/models/menu.py","a") as f:
+			logging.info("Writing menu shortcuts")
+			f.write("def _():\n    app = request.application\n    ctr = request.controller")
+			f.write("\n    response.menu += [")
+			s = ""
+			for menu in listmenu:
+				s += "\n        (T('"+menu[0]+"'), False, None, ["
+				go=False
+				for submenu in menu:
+					if go:
+						s +="\n            (T('"+submenu+"'), False, URL('"+menu[0]+"', '"+submenu+"')),"
+					else:
+						go=True
+				s=s[:-1]
+				s += "\n        ])"
+				s += ","
+			s = s[:-1]
+			s+=("\n    ]\n_()")
+			f.write(s)
+            
+			logging.info("Menu done")
+			
+		### Making menu end
 			
 		###launch web2py
 		
