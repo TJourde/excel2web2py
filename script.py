@@ -126,24 +126,25 @@ def getColumns(sheet):
 			sys.exit(sheet.col_values(colnum)[0]+" Error: Column's name couldn't be encoded in ascii")
 	return namecols
 
-def createDict(ref,nameFile,sheet,idx,len_refs):
-	
+def createDict(ref,filePath,numRef):
+	#ref: name of table referenced
+	#filePath: file's path which will be modified
+	#numRef : reference number in case of multiple references in 'sheet'
 	path=str( createFolder())
 	logpath = str( createLogs(path))
 	logging.basicConfig(filename=logpath,level=logging.DEBUG)
 	
-	with open(nameFile,"a") as f:
+	with open(filePath,"a") as f:
 		##Defining reference dict
-		s=r.split('/')
 				
 		# boo links to dict for sqlform.grid
 		nameFunc = sys.argv[1].split('/')[-1].split('.')[0]
-		f.write('\ndef boo'+str(nameFunc)+str(idx)+'(value,row,db):')
+		f.write('\ndef boo'+str(nameFunc)+str(numRef)+'(value,row,db):')
 		f.write('\n    listOfRefs = []')
 		f.write('\n    listAttr=[]')
-		f.write('\n    rowvals = row.'+s[1]+'.split("|")')
+		f.write('\n    rowvals = row.'+ref+'.split("|")')
 		f.write('\n    for val in rowvals :')
-		f.write('\n        res=db(db["'+s[1]+'"].id == val).select()')
+		f.write('\n        res=db(db["'+ref+'"].id == val).select()')
 		f.write('\n        listValAttr=[]')
 		f.write('\n        for row in res:')
 		f.write('\n            for attr in row:')
@@ -379,7 +380,7 @@ if __name__ == '__main__':
 						refs.append(i+"/"+h.split("=")[1])
 			if refs is not None:
 				for idx,r in enumerate(refs):
-					createDict(r,"../applications/TEMPLATE/controllers/"+nameController+".py",wb.sheet_by_name(r.split('/')[1]),idx,len(refs))
+					createDict(r.split('/')[1],"../applications/TEMPLATE/controllers/"+nameController+".py",idx)
 			cptC += 1
 
 		logging.info("Dicts written")
