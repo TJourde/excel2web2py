@@ -198,7 +198,7 @@ if __name__ == '__main__':
 		try:
 			logging.info("Trying to recover backup of db")
 			if os.name =="nt":
-				subprocess.check_call(["copy","%cd%"+"\..\\applications\\TEMPLATE\\models\\db_backup.py","%cd%"+"\..\\applications\\TEMPLATE\\models\\db.py"],shell=True)
+				subprocess.check_call(["copy","/Y","%cd%"+"\..\\applications\\TEMPLATE\\models\\db_backup.py","%cd%"+"\..\\applications\\TEMPLATE\\models\\db_"+sys.argv[1].split('.')[0]+".py"],shell=True)
 			else:
 				subprocess.check_call(["cp","-v","../applications/TEMPLATE/models/db_backup.py","../applications/TEMPLATE/models/db_"+sys.argv[1].split('.')[0]+".py"])	
 			logging.info("Successfully recover backup of db")
@@ -354,7 +354,7 @@ if __name__ == '__main__':
 		try:
 			logging.info("Trying to recover backup of default")
 			if os.name =="nt":
-				subprocess.check_call(["copy","%cd%"+"\..\\applications\\TEMPLATE\\controllers\\default_backup.py","%cd%"+"\..\\applications\\TEMPLATE\\controllers\\"+sys.argv[1].split('.')[0]+".py"],shell=True)
+				subprocess.check_call(["copy","/Y","%cd%"+"\..\\applications\\TEMPLATE\\controllers\\default_backup.py","%cd%"+"\..\\applications\\TEMPLATE\\controllers\\"+sys.argv[1].split('.')[0]+".py"],shell=True)
 			else:
 				subprocess.check_call(["cp","-v","../applications/TEMPLATE/controllers/default_backup.py","../applications/TEMPLATE/controllers/"+sys.argv[1].split('.')[0]+".py"])
 			
@@ -423,31 +423,18 @@ if __name__ == '__main__':
 				f.write('\n    if ((len(request.post_vars)>2) and ("makeplot" in request.post_vars)):')
 				f.write("\n        vars = request.post_vars.keys()")
 				f.write("\n        vars.remove('makeplot')")
-				f.write('\n        s=""')
+				f.write('\n        fields=""')
 				f.write("\n        typeplot=''")   
 				f.write("\n        for v in vars :")
 				f.write("\n            if v == 'plot' :")
 				f.write("\n                typeplot = request.post_vars.plot")
 				f.write("\n            else :")
-				f.write("\n                s+=str(v)+','")
-				f.write("\n        s=s[:-1]")
-				f.write("\n        if typeplot == 'hist' :")
-				f.write("\n            plt.hist(db.executesql("+'"'+'Select '+'"+'+'s'+'+"'+' from '+nameTable+'"))')
-				f.write("\n            plt.xlabel('Value')")
-				f.write("\n            plt.ylabel('Number')")
-				f.write("\n        elif typeplot == 'sub' :")
-				f.write("\n            for idx,item in enumerate(s.split(',')) :")
-				f.write("\n                plt.subplot(len(s.split(',')),1,idx+1)")
-				f.write("\n                plt.plot(db.executesql("+'"'+'Select '+'"+'+'item'+'+"'+' from '+nameTable+'"))')
-				f.write("\n                plt.ylabel(item+' (Value)')")
-				f.write("\n            plt.xlabel('Number')")
-				f.write("\n        else :")
-				f.write("\n            plt.xlabel('Number')")
-				f.write("\n            plt.ylabel('Value')")
-				f.write("\n            plt.plot(db.executesql("+'"'+'Select '+'"+'+'s'+'+"'+' from '+nameTable+'"))')
-				f.write("\n        plt.title('Plot of "+nameTable+" with '+s)")
-				f.write("\n        plt.savefig('applications/TEMPLATE/static/foo.png')")
-				f.write('\n        plt.clf()')
+				f.write("\n                fields+=str(v)+','")
+				f.write("\n        fields=fields[:-1]")
+				f.write("\n        nameTable ='"+nameTable+"'")
+				f.write("\n        foo = os.path.abspath(os.path.dirname(__file__))")
+				f.write("\n        foo = foo + '/../static/foo.png' ")
+				f.write("\n        makePlot(typeplot,fields,nameTable,foo)")
 				f.write("\n        plot=IMG(_src=URL('static','foo.png'),_alt='plot')")
 				f.write('\n    records=SQLFORM.grid(table,paginate=10,maxtextlength=256,showbuttontext=False)')
 				f.write('\n    return dict(form=form, plot=plot, records=records)')
@@ -458,6 +445,14 @@ if __name__ == '__main__':
 			f.write('\n    try:\n        subprocess.check_call(["python",'+'"'+str(script_path)+"/scriptInit.py"+'","'+str(script_path)+"/"+sys.argv[1]+'"'+"])")
 			f.write('\n    except subprocess.CalledProcessError:\n        sys.exit("Error : scriptInit.py could not be reached")')
 			
+			#used to create plot
+			f.write('\ndef makePlot(typeplot,fields,nameTable,whereToSave):')
+			f.write('\n    from subprocess import check_call')
+			f.write('\n    try:')
+			f.write('\n        subprocess.check_call(["python",'+'"'+str(script_path)+"/scriptPlot.py"+'",typeplot,fields,nameTable,whereToSave])')
+			f.write('\n    except subprocess.CalledProcessError:')
+			f.write('\n        sys.exit("Error : scriptPlot.py could not be reached")')
+			
 		logging.info("Writing in "" finished")
 		logging.info("Closing file")
 		
@@ -466,7 +461,8 @@ if __name__ == '__main__':
 			logging.info("Trying to create views")
 			for nameTable in allshnames:
 				if os.name =="nt":
-					subprocess.check_call(["copy","%cd%"+"\..\\applications\\TEMPLATE\\views\\default\\table.html","%cd%"+"\..\\applications\\TEMPLATE\\views\\"+sys.argv[1].split('.')[0]+"\\"+nameTable+".html"],shell=True)
+					subprocess.call(["mkdir","%cd%"+"\..\\applications\\TEMPLATE\\views\\"+sys.argv[1].split('.')[0]],shell=True)
+					subprocess.check_call(["copy","/Y","%cd%"+"\..\\applications\\TEMPLATE\\views\\default\\table.html","%cd%"+"\..\\applications\\TEMPLATE\\views\\"+sys.argv[1].split('.')[0]+"\\"+nameTable+".html"],shell=True)
 				else:
 					subprocess.call(["mkdir","-v","../applications/TEMPLATE/views/"+sys.argv[1].split('.')[0]+"/"])
 					subprocess.check_call(["cp","-v","../applications/TEMPLATE/views/default/table.html","../applications/TEMPLATE/views/"+sys.argv[1].split('.')[0]+"/"+nameTable+".html"])
@@ -483,7 +479,7 @@ if __name__ == '__main__':
 		try:
 			logging.info("Trying to recover backup of menu")
 			if os.name =="nt":
-				subprocess.check_call(["copy","%cd%"+"\..\\applications\\TEMPLATE\\models\\backup_menu.py","%cd%"+"\..\\applications\\TEMPLATE\\models\\menu.py"],shell=True)
+				subprocess.check_call(["copy","/Y","%cd%"+"\..\\applications\\TEMPLATE\\models\\backup_menu.py","%cd%"+"\..\\applications\\TEMPLATE\\models\\menu.py"],shell=True)
 			else:
 				subprocess.check_call(["cp","-v","../applications/TEMPLATE/models/backup_menu.py","../applications/TEMPLATE/models/menu.py"])
 			
@@ -501,8 +497,12 @@ if __name__ == '__main__':
 				allhtml = os.listdir('../applications/TEMPLATE/views/'+view)
 				submenus = []
 				submenus.append(str(view))
-				#for some reason, list dir display files in the chronological order in reverse
-				for html in reversed(allhtml):
+				#for some reason, list dir display files in the chronological order in reverse on Linux
+				
+				if os.name !="nt":
+					allhtml=reversed(allhtml)
+				
+				for html in allhtml:
 					#to make sure it is a view
 					if html.endswith('.html'):
 						submenus.append(str(html.split('.')[0]))

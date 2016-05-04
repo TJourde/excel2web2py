@@ -4,7 +4,7 @@ Parse excel file and create a web app with _web2py_ 2.14.3
 __Author__ : Tanguy Jourde  
 __Supervisor__ : Chambon Laurent
 
-_Python 2.7_ is needed
+_Python 2.7_ is needed, more on that below with matplotlib
 
 Functionalities :
 ----------------
@@ -33,15 +33,19 @@ To run commands, use the terminal on Unix and the command console on Windows
 
 You will need to install web2py.
 
-You will also need to install these modules before deploying the application:
+You will also need to have these modules installed before deploying the application:
 - xlrd 0.9.4 to read excel files
 - sys to perform some basic system operations
 - os to retrieve informations on the system
 - time to retrieve the time on the machine
-- errno to retreive errors
+- errno to retrieve errors
 - logging to create logs of the code
 - sqlite3 to use databases
 - subprocess to use threads and multi-execution
+- matplotlib to create plots  
+
+__Important__: It is highly recommended to download Python(x,y) as it comes packaged with many modules needed to run matplotlib, only if you have not already installed Python 2.7.  
+If you have, you want to check out the documentation [here](http://matplotlib.org/users/installing.html#windows) to lookup what modules you will need to install.
 
 __Unix:__   
 On Unix, install these packages through the terminal using your favorite package manager.  
@@ -49,7 +53,8 @@ Example: `apt-get install xlrd`
 
 __Windows__:  
 You will have to download python 2.7, follow the instructions on the official website  
-Xlrd is packaged with this application, run `cd path/to/xlrd`
+Xlrd is packaged with this application, run :
+> cd path/to/xlrd  
 python setup.py install
 
 You may need to execute those operations as an administrator though(put `sudo` first before an install adn input the admin's password)
@@ -75,5 +80,4 @@ On Unix, run these commands :
 
 On Windows, simply execute it.
 
-__Bugs :__
-
+__Bugs :__ Matplotlib may not load correctly
