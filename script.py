@@ -8,25 +8,31 @@ import logging
 import xlrd
 import subprocess
 
-#import matplotlib.pyplot as plt
-
-#plt.plot([1,2,3])
-#plt.show()
-
+#Retrieve path of storage.sqlite to help executing queries
+#I:None
+#O:Absolute path of storage.sqlite
 def getStoragePath():
 	return str(os.path.abspath(os.path.dirname(__file__)))+"/../applications/TEMPLATE/databases/storage.sqlite"
-
+	
+#Retrieve local time to generate logs
+#I:None
+#O:Local time h:m:s
 def getTimeH():
 	localtime = time.localtime(time.time()) #heure machine
 	timeh =  str(localtime[3])+'_'+str(localtime[4])+'_'+str(localtime[5])
 	return timeh
-
+	
+#Generate Log file 
+#I: path of Log folder
+#O:Return path of newly generated log file
 def createLogs(zepath):
 	localtime = time.localtime(time.time()) #heure machine
-	timeh =  str(localtime[3])+'_'+str(localtime[4])+'_'+str(localtime[5])
+	timeh =  getTimeH()
 	logpath = str(zepath)+"Log_"+timeh+".log"	
 	return logpath
-	
+#Create folder of Logs
+#I:None
+#O:Return path of newly generated folder
 def createFolder():
 	localtime = time.localtime(time.time()) #heure machine
 	timedate = str(localtime[0])+'_'+str(localtime[1])+'_'+str(localtime[2])
@@ -43,9 +49,10 @@ def createFolder():
 	finally:
 		return path
 	
-# test if name file pass criteria
+#Test if name file pass criteria(no spaces,ascii only)
+#I:path of file
+#O:None
 def fileWellFormatted(pathFile):
-	
 	path=str( createFolder())
 	logpath = str( createLogs(path))
 	logging.basicConfig(filename=logpath,level=logging.DEBUG)
@@ -61,6 +68,9 @@ def fileWellFormatted(pathFile):
 		logging.exception("File's name couldn't be encoded in ascii")
 		sys.exit("Error : File's name couldn't be encoded in ascii")
 
+#Try to open file as a workbook
+#I:path of file
+#O:return workbook
 def tryOpenWorkbookFile(pathFile):
 	path=str( createFolder())
 	logpath = str( createLogs(path))
@@ -73,11 +83,18 @@ def tryOpenWorkbookFile(pathFile):
 		logging.exception("File couldn't be opened")
 		sys.exit("Error: File couldn't be opened")
 		
-# test if name pass criteria (does it pass )
+#Test if name pass criteria(no spaces,ascii only,alpha only)
+#I:string to test
+#O:None
 def isNametATableName(name):
 	path=str( createFolder())
 	logpath = str( createLogs(path))
 	logging.basicConfig(filename=logpath,level=logging.DEBUG)
+	
+	if(" " in pathFile):
+		logging.error("File's name has spaces")
+		sys.exit("Error: file's name has spaces")
+	
 	try:
 		name.encode('ascii')
 	
@@ -90,9 +107,9 @@ def isNametATableName(name):
 			logging.exception("Namehas special characters: "+ name)
 			sys.exit("Name has special characters: "+ name )
 		
-	
-
-
+#Execute a Drop table sql query
+#I:string name of the table, the cursor which executes queries
+#O:None
 def dropTable (nameTable,cursor):
 	path=str( createFolder())
 	logpath = str( createLogs(path))
@@ -105,7 +122,10 @@ def dropTable (nameTable,cursor):
 		logging.warning( str(nameTable))
 		logging.warning( er.message)
 		pass
-#return first line
+		
+#return a list of each column's name (first line of a sheet has it)
+#I:A sheet
+#O:list namecols
 def getColumns(sheet):
 	path=str( createFolder())
 	logpath = str( createLogs(path))
@@ -126,6 +146,10 @@ def getColumns(sheet):
 			sys.exit(sheet.col_values(colnum)[0]+" Error: Column's name couldn't be encoded in ascii")
 	return namecols
 
+#Write in a file the function boo+smth which executes a sql query on a referenced table to generate a table in the sqlform.grid of the view
+#Multiple boo are needed to ensure multiple references
+#I:the referenced table string,the column's name,the path of the file and the reference nuber (number of time createDict was called)
+#O:None
 def createDict(ref,col,filePath,numRef):
 	#ref: name of table referenced
 	#filePath: file's path which will be modified
@@ -161,7 +185,9 @@ def createDict(ref,col,filePath,numRef):
 
 		
 
-### Defining tables
+# Defining tables in the model and return references
+#I:path of the file,all sheets'name, all columns'name
+#O:list tabReferences
 def createTables(pathFile,allshnames,allcolumns):           
 	tabReferences = [] #used also to write represent attr in default controller
 	with open("../applications/TEMPLATE/models/db_"+pathFile.split('.')[0]+".py","a") as f:
@@ -210,10 +236,11 @@ def createTables(pathFile,allshnames,allcolumns):
 		f.write('\ndef getTable(db):\n    return db.'+str(allshnames[0]).encode('utf-8'))
 		
 		return tabReferences
-	
+#Determine if a table has already been defined in the past
+#I:allfiles list of files, all sheets'name
+#O:tableHere
 def isTableAlreadyThere(allfiles,allshnames):		
 
-	### Dropping tables
 	#allow to know if tables should be dropped
 	tableFile = False
 	tableHere = ""
@@ -228,7 +255,9 @@ def isTableAlreadyThere(allfiles,allshnames):
 						tableFile = True
 						tableHere = i
 	return tableHere
-
+#Execute dropTable and delete views on user's agreement as it deletes everything from those tables
+#I:the name of the table already defined,allfiles list of files, all sheets'name
+#O:None
 def requestDrop(tableHere,allshnames,allfiles):
 	##Warning user : delete possible
 	logging.info("Table exists :"+str(tableHere))
@@ -288,8 +317,10 @@ def requestDrop(tableHere,allshnames,allfiles):
 			logging.info("Stopping script on user's demand")
 			print "Stopping script"
 			exit()
-					
-def createController(allshnames,tabReferences,wb,mainName,script_path,myFile):
+#Create controllers in web2py, define represent which calls boo functions and define forms to create plots
+#I:all sheets'name,list of references,the file's workbook, the file's name,the path of storage.sqlite,the path of the file
+#O:None
+def createControllers(allshnames,tabReferences,wb,mainName,script_path,myFile):
 
 	#used for calling scriptInit once page has loaded
 	with open("../applications/TEMPLATE/controllers/"+mainName+".py","a") as f:
@@ -360,7 +391,9 @@ def createController(allshnames,tabReferences,wb,mainName,script_path,myFile):
 		f.write('\n    except subprocess.CalledProcessError:')
 		f.write('\n        sys.exit("Error : scriptPlot.py could not be reached")')					
 
-		
+#Return a list of string from view folder to generate a menu
+#I:None
+#O:list of menu and submenus		
 def createListeMenu():
 	listmenu=[]
 	allviews = os.listdir('../applications/TEMPLATE/views')
@@ -380,7 +413,9 @@ def createListeMenu():
 					submenus.append(str(html.split('.')[0]))
 			listmenu.append(submenus)
 	return listmenu
-
+#Recreate the menu of menu.py
+#I:list of menu and submenus
+#O:None
 def createMenu(listmenu):	
 	## Shortcuts
 	with open("../applications/TEMPLATE/models/menu.py","a") as f:
@@ -496,7 +531,7 @@ if __name__ == '__main__':
 		logging.info("Dicts written")
 
 		#Create Controllers
-		createController(allshnames,tabReferences,wb,mainName,script_path,sys.argv[1])
+		createControllers(allshnames,tabReferences,wb,mainName,script_path,sys.argv[1])
 
 			
 		logging.info("Writing in controller "+mainName+" finished")
