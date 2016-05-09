@@ -6,8 +6,6 @@ import sqlite3
 import logging
 #lib read excel files
 import xlrd
-import logging
-import subprocess
 import script
 
 #execute sql request to insert data
@@ -23,17 +21,23 @@ def insertRowsData(nameTable,sheet,cursor):
 	for rownum in range(sheet.nrows):
 		if(not firstline):
 			query = "INSERT INTO "+nameTable+" VALUES ("
+			vals = ""
 			if not isThereId:
-				query += str(idcpt)+","
+				vals += str(idcpt)+","
 			for rowval in sheet.row_values(rownum):
 				#for null value
 				try:
-					query+='"'+rowval+'"'+','
+					vals+='"'+rowval+'"'+','
 				except:
-					query+='"'+str(rowval)+'"'+','
-			query=query[:-1]
+					vals+='"'+str(rowval)+'"'+','
+			vals=vals[:-1]
+			query+=vals
 			query+=')'
-			idcpt+=1
+
+			if vals.strip(',""') == str(idcpt):
+				query=""
+			else:
+				idcpt+=1
 		else:
 			if any("idthis" in s for s in sheet.row_values(rownum)):
 				isThereId = True

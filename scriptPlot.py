@@ -1,6 +1,6 @@
 #!usr/bin/env/python
 # -*- coding: utf-8 -*-
-import sys, os, time, errno
+import sys
 import matplotlib.pyplot as plt
 import sqlite3
 import script

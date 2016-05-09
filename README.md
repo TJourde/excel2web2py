@@ -8,9 +8,11 @@ _Python 2.7_ is needed, more on that below with matplotlib
 
 Functionalities :
 ----------------
-Define a database in the databases folder of the application TEMPLATE in web2py from an excel file.  
+
+The main purpose of this application is to generate a database from an Excel file on web2py.  
 Upon visiting the web2py server, you are able to access and search specific content from the excel file.  
-You are also being able to insert, update and delete data if you are logged in as an authentified user.
+You are also being able to insert, update and delete data if you are logged in as an authentified user.  
+You can also create plots from columns containing only numbers : a picture will appear on the page showing the plot(s) with the column(s) selected.  
 
 Before Installation :
 ---------------------
@@ -18,14 +20,24 @@ Before Installation :
 __Excel:__
 
 The excel file's name cannot contain special characters or spaces.  
+It will be used to create a SQL Table, so it must respect the same constraints.
+
 The name of the first sheet is used as the name of the table and the first element of the first row defines the names of the columns of the database so they both should not contain special characters.  
 Separate elements with the '|' (or "pipe") sign. 
 
-Keywords to use to define the table with an example:
-- Nom_francais|type='string'|reference=Nom_anglais|idthis
-- type can be integer,float,string
-- reference="" : means that you want to link values to another sheet with the same name
-- idthis: means that values on this column represent the row instead of the row's number.
+Look at this example to get a better picture of what is expected to be present on the first cell of a column:  
+> Nom_francais|type='string'|reference=Nom_anglais|idthis  
+
+The first element is used to generate the SQL Table, it also must follow the same rules that a SQL Table's name does.  
+
+Keywords to use to define the table with an example: 
+- _type_ can be integer,float,string  
+- _reference_= Another_Table : means that you want to link values to another sheet with the same name; it will display elements from that table on the page.  
+- _idthis_: means that values on this column represent the row instead of the row's number; it will be useful when you are linking tables with reference as it will use data from that column.
+
+If you do not define yourself the type of a column, the program can still work but the data may not be formatted the way it is meant; for example, integers may be typecasted to floats.  
+Also, reference and idthis can only work on column containing only integers.  Don't forget to put a '|' at the end of each number 
+A file called _Test_ has been joined to complete these explanations.
 
 __Programs:__
 
