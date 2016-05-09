@@ -126,7 +126,7 @@ def getColumns(sheet):
 			sys.exit(sheet.col_values(colnum)[0]+" Error: Column's name couldn't be encoded in ascii")
 	return namecols
 
-def createDict(ref,filePath,numRef):
+def createDict(ref,col,filePath,numRef):
 	#ref: name of table referenced
 	#filePath: file's path which will be modified
 	#numRef : reference number in case of multiple references in 'sheet'
@@ -142,7 +142,7 @@ def createDict(ref,filePath,numRef):
 		f.write('\ndef boo'+str(nameFunc)+str(numRef)+'(value,row,db):')
 		f.write('\n    listOfRefs = []')
 		f.write('\n    listAttr=[]')
-		f.write('\n    rowvals = row.'+ref+'.split("|")')
+		f.write('\n    rowvals = row.'+col+'.split("|")')
 		f.write('\n    for val in rowvals :')
 		f.write('\n        res=db(db["'+ref+'"].id == val).select()')
 		f.write('\n        listValAttr=[]')
@@ -159,9 +159,251 @@ def createDict(ref,filePath,numRef):
 		f.write('\n    t=["w2p_odd odd","w2p_even even"]')
 		f.write('\n    return TABLE(*[TR(r, _class=t[idx%2]) for idx,r in enumerate(listOfRefs)])')
 
-            
 		
+
+### Defining tables
+def createTables(pathFile,allshnames,allcolumns):           
+	tabReferences = [] #used also to write represent attr in default controller
+	with open("../applications/TEMPLATE/models/db_"+pathFile.split('.')[0]+".py","a") as f:
+		logging.info("Successfully opened db")
+		logging.info("Creating tables")
+		##Defining sheet table
+		cptC = 0
+		for nameSheet in allshnames:
+			pk = []
+			zeid = "id"
+			f.write('\ndb.define_table("'+str(nameSheet).encode('utf-8')+'"')
+			for c in allcolumns[cptC]:
+				
+				#nameColumn should always be first element
+				s=""
+				for item in c[+1:]:
+	
+					if item == "primarykey":
+						pk.append(c[0])
+					elif item ==  "idthis":
+						s+=',"id"'
+						zeid=c[0]
+					elif "reference=" in item:
+						nvref = item.split("=")
+						if len(nvref) > 1 :
+							tabReferences.append(nameSheet+"/"+nvref[1])
+						else:
+							logging.error("Reference with no name "+c[0])
+							sys.exit("A reference had no name attached : please modify the file")
+					elif (("type='integer'" == item) or ("type='float'" == item) or ("type='string'" == item)) :
+							s+=","+item.encode('utf-8')
+				f.write(',Field("'+c[0].encode('utf-8')+'"'+s+')')
+						
+			cptC += 1
+			if len(pk) > 0:
+				f.write(',primarykey=["'+pk[0].encode('utf-8')+'"')
+				for pki in pk[+1:]:
+					f.write(',"'+pki.encode('utf-8')+'"')
+				f.write(']')
+			f.write(')')
+
+		##Defining some heplful functions
+		#getDb -> called from default.py to get the same db as db.py
+		f.write('\ndef getDb():\n    from os import path\n    module_path=os.path.abspath(os.path.dirname(__file__))\n    dbpath = module_path + "/../databases"\n    db_name = "storage.sqlite"\n    db = DAL("sqlite://"+ db_name ,folder=dbpath, auto_import=True)\n    return db')
+		#getTable -> called from default.py to get the table generated
+		f.write('\ndef getTable(db):\n    return db.'+str(allshnames[0]).encode('utf-8'))
 		
+		return tabReferences
+	
+def isTableAlreadyThere(allfiles,allshnames):		
+
+	### Dropping tables
+	#allow to know if tables should be dropped
+	tableFile = False
+	tableHere = ""
+
+
+	##Test if table's name is a file in databases
+	for i in allshnames:
+		if not tableFile:
+			for f in allfiles:
+				if not tableFile:
+					if str(i)+'.table' in f:
+						tableFile = True
+						tableHere = i
+	return tableHere
+
+def requestDrop(tableHere,allshnames,allfiles):
+	##Warning user : delete possible
+	logging.info("Table exists :"+str(tableHere))
+	print "This sheet's name "+str(tableHere)+" is already used"
+	print "Continuing will erase all tables with a sheet's name on this file"
+	print "Change this name if you wish to keep your data"
+	print "Or do you want to clear your data and generate new tables ? (y/n)"
+	drop = False
+	# only continue if drop, else quit exec
+	while not drop:
+		answer = raw_input()
+		if answer == "y":
+			logging.info("Deleting files in databases and view")
+			
+			try:
+				logging.info("Trying to access database")
+				conn = sqlite3.connect(getStoragePath())
+				c = conn.cursor()
+			except:
+				logging.exception("Database couldn't be reached"+getStoragePath())
+				sys.exit("Database couldn't be reached")
+			
+			logging.info("Success: connected to database")
+			drop = True
+			
+			for s in allshnames:
+				delTable= ""
+				for f in allfiles:
+					#7 is the last digit of the hashkey of the files table
+					if "7_"+str(s)+'.table' in f:
+						
+						dropTable(s,c)
+						delTable = f
+						
+				if delTable is not "":		
+					try:
+						logging.info("Trying delete file")
+						if os.name =="nt":
+							subprocess.check_call(["DEL","%cd%"+"\..\\applications\\TEMPLATE\\databases\\"+str(delTable)],shell=True)
+						else:
+							subprocess.check_call(["rm","-rfv","../applications/TEMPLATE/databases/"+str(delTable)])
+						
+						logging.info("Successfully deleted file")
+					except subprocess.CalledProcessError as er:
+						logging.exception("Error while deleting "+str(f)+" : "+er.message )
+						sys.exit("Cannot erase file")
+			
+			# Save (commit) the changes
+			conn.commit()
+			# We can also close the connection if we are done with it.
+			# Just be sure any changes have been committed or they will be lost.
+			conn.close()
+			logging.info("Done deleting files and dropping")
+			
+		
+		elif answer == "n":
+			logging.info("Stopping script on user's demand")
+			print "Stopping script"
+			exit()
+					
+def createController(allshnames,tabReferences,wb,mainName,script_path,myFile):
+
+	#used for calling scriptInit once page has loaded
+	with open("../applications/TEMPLATE/controllers/"+mainName+".py","a") as f:
+		logging.info("Successfully opened "+mainName+".py")
+			
+		# then, we define all links to views from this file
+		for nameTable in allshnames: 
+			f.write('\ndef '+nameTable+'():')
+			f.write('\n    db = getDb()')
+			f.write('\n    table = db.'+nameTable)
+			# necessary to differentiate to prevent dal errors
+			#for each reference
+			for idx,r in enumerate(tabReferences):
+				s=r.split("/")
+				#for each column of the table
+				for c in getColumns(wb.sheet_by_name(nameTable)):
+					for item in c: 
+						if 'reference' in item :
+						#s1 is what is referenced c0 is the name of the column which references item1
+							if ((s[1] == item.split('=')[1])) :
+								f.write('\n    db.'+s[0]+'.'+c[0]+'.represent = lambda val,row:boo'+mainName+str(idx)+'(val,row,db)')
+			f.write('\n    rows = db(table).select()')
+			f.write('\n    if (len(rows) == 0):')
+			f.write('\n        initData()')
+			f.write('\n    rows = db(table).select()')
+			
+			s="\n    form = FORM("
+			for c in getColumns(wb.sheet_by_name(nameTable)):
+				if (("type='integer'" in c) or( "type='float'" in c)):
+					s+="DIV(LABEL('"+c[0]+"'),INPUT(_name='"+c[0]+"',_type='checkbox'),_class='row'),"
+			s+="DIV(LABEL('Simple plot'),INPUT(_type='radio',_name='plot',_value='plot' ,value='plot'),LABEL('Histogram'),INPUT(_type='radio',_name='plot',_value='hist'),LABEL('Subplots'),INPUT(_type='radio',_name='plot',_value='sub'),_class='row'),"
+			s+="INPUT(_type='submit',_class='btn btn-primary',_name='makeplot'),_class='form-horizontal',_action='',_method='post')"
+			if "DIV" in s:
+				f.write(s)
+			else:
+				f.write("\n    form=''")
+			f.write("\n    plot=DIV('')")
+			f.write('\n    if ((len(request.post_vars)>2) and ("makeplot" in request.post_vars)):')
+			f.write("\n        vars = request.post_vars.keys()")
+			f.write("\n        vars.remove('makeplot')")
+			f.write('\n        fields=""')
+			f.write("\n        typeplot=''")   
+			f.write("\n        for v in vars :")
+			f.write("\n            if v == 'plot' :")
+			f.write("\n                typeplot = request.post_vars.plot")
+			f.write("\n            else :")
+			f.write("\n                fields+=str(v)+','")
+			f.write("\n        fields=fields[:-1]")
+			f.write("\n        nameTable ='"+nameTable+"'")
+			f.write("\n        foo = os.path.abspath(os.path.dirname(__file__))")
+			f.write("\n        foo = foo + '/../static/foo.png' ")
+			f.write("\n        makePlot(typeplot,fields,nameTable,foo)")
+			f.write("\n        plot=IMG(_src=URL('static','foo.png'),_alt='plot')")
+			f.write('\n    records=SQLFORM.grid(table,paginate=10,maxtextlength=256,showbuttontext=False)')
+			f.write('\n    return dict(form=form, plot=plot, records=records)')
+			
+		# used in case main table is empty	
+		f.write('\ndef initData():')
+		f.write('\n    from subprocess import check_call')
+		f.write('\n    try:\n        subprocess.check_call(["python",'+'"'+str(script_path)+"/scriptInit.py"+'","'+str(script_path)+"/"+myFile+'"'+"])")
+		f.write('\n    except subprocess.CalledProcessError:\n        sys.exit("Error : scriptInit.py could not be reached")')
+		
+		#used to create plot
+		f.write('\ndef makePlot(typeplot,fields,nameTable,whereToSave):')
+		f.write('\n    from subprocess import check_call')
+		f.write('\n    try:')
+		f.write('\n        subprocess.check_call(["python",'+'"'+str(script_path)+"/scriptPlot.py"+'",typeplot,fields,nameTable,whereToSave])')
+		f.write('\n    except subprocess.CalledProcessError:')
+		f.write('\n        sys.exit("Error : scriptPlot.py could not be reached")')					
+
+		
+def createListeMenu():
+	listmenu=[]
+	allviews = os.listdir('../applications/TEMPLATE/views')
+	for view in allviews:
+		if ((os.path.isdir('../applications/TEMPLATE/views/'+view)) and ('default' not in view)):
+			allhtml = os.listdir('../applications/TEMPLATE/views/'+view)
+			submenus = []
+			submenus.append(str(view))
+			#for some reason, list dir display files in the chronological order in reverse on Linux
+			
+			if os.name !="nt":
+				allhtml=reversed(allhtml)
+			
+			for html in allhtml:
+				#to make sure it is a view
+				if html.endswith('.html'):
+					submenus.append(str(html.split('.')[0]))
+			listmenu.append(submenus)
+	return listmenu
+
+def createMenu(listmenu):	
+	## Shortcuts
+	with open("../applications/TEMPLATE/models/menu.py","a") as f:
+		logging.info("Writing menu shortcuts")
+		f.write("def _():\n    app = request.application\n    ctr = request.controller")
+		f.write("\n    response.menu += [")
+		s = ""
+		for menu in listmenu:
+			s += "\n        (T('"+menu[0]+"'), False, None, ["
+			go=False
+			for submenu in menu:
+				if go:
+					s +="\n            (T('"+submenu+"'), False, URL('"+menu[0]+"', '"+submenu+"')),"
+				else:
+					go=True
+			s=s[:-1]
+			s += "\n        ])"
+			s += ","
+		s = s[:-1]
+		s+=("\n    ]\n_()")
+		f.write(s)
+		
+		logging.info("Menu done")
 
 #prevent execution on import from scriptInit
 if __name__ == '__main__':
@@ -192,162 +434,34 @@ if __name__ == '__main__':
 		logging.info("Successfully opened the sheets")
 		logging.info("Trying to retrieve the names of the columns of each sheets")
 		allcolumns = []
-		for i in allsheets:
-			allcolumns.append(getColumns(i))
+		mainName = sys.argv[1].split('.')[0]
+		for nameSheet in allsheets:
+			allcolumns.append(getColumns(nameSheet))
 		logging.info("Successfully retrieved the name of the columns")
 	
 		try:
 			logging.info("Trying to recover backup of db")
 			if os.name =="nt":
-				subprocess.check_call(["copy","/Y","%cd%"+"\..\\applications\\TEMPLATE\\models\\db_backup.py","%cd%"+"\..\\applications\\TEMPLATE\\models\\db_"+sys.argv[1].split('.')[0]+".py"],shell=True)
+				subprocess.check_call(["copy","/Y","%cd%"+"\..\\applications\\TEMPLATE\\models\\db_backup.py","%cd%"+"\..\\applications\\TEMPLATE\\models\\db_"+mainName+".py"],shell=True)
 			else:
-				subprocess.check_call(["cp","-v","../applications/TEMPLATE/models/db_backup.py","../applications/TEMPLATE/models/db_"+sys.argv[1].split('.')[0]+".py"])	
+				subprocess.check_call(["cp","-v","../applications/TEMPLATE/models/db_backup.py","../applications/TEMPLATE/models/db_"+mainName+".py"])	
 			logging.info("Successfully recover backup of db")
 		except subprocess.CalledProcessError as er:
 			logging.exception("Error while retrieving db_backup: " + er.message)
 			sys.exit("Cannot access db_backup")
 			
 		
+		tabReferences = createTables(sys.argv[1],allshnames,allcolumns)
+		allfiles = os.listdir('../applications/TEMPLATE/databases')
+		tableHere = isTableAlreadyThere(allfiles,allshnames)
+		if tableHere is not "":
+			requestDrop(tableHere,allshnames,allfiles)
 
-
-### Defining tables
-
-		ref = [] #used also to write represent attr in default controller
-		zeids = []
-		with open("../applications/TEMPLATE/models/db_"+sys.argv[1].split('.')[0]+".py","a") as f:
-			logging.info("Successfully opened db")
-			logging.info("Creating tables")
-			##Defining sheet table
-			cptC = 0
-			for i in allshnames:
-				pk = []
-				zeid = "id"
-				f.write('\ndb.define_table("'+str(i).encode('utf-8')+'"')
-				for j in allcolumns[cptC]:
-					
-					#nameColumn should always be first element
-					s=""
-					for h in j[+1:]:
-		
-						if h == "primarykey":
-							pk.append(j[0])
-						elif h ==  "idthis":
-							s+=',"id"'
-							zeid=j[0]
-						elif "reference=" in h:
-							ref.append(i+"/"+h.split("=")[1])		
-						elif (("type='integer'" == h) or ("type='float'" == h) or ("type='string'" == h)) :
-								s+=","+h.encode('utf-8')
-					f.write(',Field("'+j[0].encode('utf-8')+'"'+s+')')
-							
-				zeids.append(zeid+"/"+i)
-				cptC += 1
-				if len(pk) > 0:
-					f.write(',primarykey=["'+pk[0].encode('utf-8')+'"')
-					for pki in pk[+1:]:
-						f.write(',"'+pki.encode('utf-8')+'"')
-					f.write(']')
-				f.write(')')
-			
-
-
-	
-			##Defining some heplful functions
-			#getDb -> called from default.py to get the same db as db.py
-			f.write('\ndef getDb():\n    from os import path\n    module_path=os.path.abspath(os.path.dirname(__file__))\n    dbpath = module_path + "/../databases"\n    db_name = "storage.sqlite"\n    db = DAL("sqlite://"+ db_name ,folder=dbpath, auto_import=True)\n    return db')
-			#getTable -> called from default.py to get the table generated
-			f.write('\ndef getTable(db):\n    return db.'+str(allshnames[0]).encode('utf-8'))
-			
-			### Defining tables end
-			
-			### Dropping tables
-
-
-			#allow to know if tables should be dropped
-			allfiles = os.listdir('../applications/TEMPLATE/databases')
-			tableFile = False
-			tableHere = ""
-			
-
-			##Test if table's name is a file in databases
-			for i in allshnames:
-				if not tableFile:
-					for f in allfiles:
-						if not tableFile:
-							if str(i)+'.table' in f:
-								tableFile = True
-								tableHere = i
-								
-			##Warning user : delete possible
-			if tableFile:
-				logging.info("Table exists :"+str(tableHere))
-				print "This sheet's name "+str(tableHere)+" is already used"
-				print "Continuing will erase all tables with a sheet's name on this file"
-				print "Change this name if you wish to keep your data"
-				print "Or do you want to clear your data and generate new tables ? (y/n)"
-				drop = False
-				# only continue if drop, else quit exec
-				while not drop:
-					answer = raw_input()
-					if answer == "y":
-						logging.info("Deleting files in databases and view")
-						
-						try:
-							logging.info("Trying to access database")
-							conn = sqlite3.connect(getStoragePath())
-							c = conn.cursor()
-						except:
-							logging.exception("Database couldn't be reached"+getStoragePath())
-							sys.exit("Database couldn't be reached")
-						
-						logging.info("Success: connected to database")
-						drop = True
-						
-						for s in allshnames:
-							delTable= ""
-							for f in allfiles:
-								#7 is the last digit of the hashkey of the files table
-								if "7_"+str(s)+'.table' in f:
-									
-									dropTable(s,c)
-									delTable = f
-									
-							if delTable is not "":		
-								try:
-									logging.info("Trying delete file")
-									if os.name =="nt":
-										subprocess.check_call(["DEL","%cd%"+"\..\\applications\\TEMPLATE\\databases\\"+str(delTable)],shell=True)
-									else:
-										subprocess.check_call(["rm","-rfv","../applications/TEMPLATE/databases/"+str(delTable)])
-									
-									logging.info("Successfully deleted file")
-								except subprocess.CalledProcessError as er:
-									logging.exception("Error while deleting "+str(f)+" : "+er.message )
-									sys.exit("Cannot erase file")
-						
-						# Save (commit) the changes
-						conn.commit()
-						# We can also close the connection if we are done with it.
-						# Just be sure any changes have been committed or they will be lost.
-						conn.close()
-						logging.info("Done deleting files and dropping")
-						
-					
-					elif answer == "n":
-						logging.info("Stopping script on user's demand")
-						print "Stopping script"
-						exit()
-					
-
-			### Dropping tables end
-
-
-			#actualize allfiles in case of delete
-			allfiles = os.listdir('../applications/TEMPLATE/databases')
-			
-			
-			logging.info("Writing in db finished")
-			logging.info("Closing file")
+		#actualize allfiles in case of delete
+		allfiles = os.listdir('../applications/TEMPLATE/databases')
+				
+		logging.info("Writing in db finished")
+		logging.info("Closing file")
 			
 
 		
@@ -355,9 +469,9 @@ if __name__ == '__main__':
 		try:
 			logging.info("Trying to recover backup of default")
 			if os.name =="nt":
-				subprocess.check_call(["copy","/Y","%cd%"+"\..\\applications\\TEMPLATE\\controllers\\default_backup.py","%cd%"+"\..\\applications\\TEMPLATE\\controllers\\"+sys.argv[1].split('.')[0]+".py"],shell=True)
+				subprocess.check_call(["copy","/Y","%cd%"+"\..\\applications\\TEMPLATE\\controllers\\default_backup.py","%cd%"+"\..\\applications\\TEMPLATE\\controllers\\"+mainName+".py"],shell=True)
 			else:
-				subprocess.check_call(["cp","-v","../applications/TEMPLATE/controllers/default_backup.py","../applications/TEMPLATE/controllers/"+sys.argv[1].split('.')[0]+".py"])
+				subprocess.check_call(["cp","-v","../applications/TEMPLATE/controllers/default_backup.py","../applications/TEMPLATE/controllers/"+mainName+".py"])
 			
 			
 			logging.info("Successfully recover backup of default")
@@ -366,112 +480,61 @@ if __name__ == '__main__':
 			sys.exit("default_backup cannot be found")
 
 		###Dicts
-		#we need to define boo functions before the views fuctions
+		#we need to define 'boo' functions before the views functions, they will be used to call referenced records
 		logging.info("Creating dicts")
 
-		nameController = sys.argv[1].split('.')[0]
-
-		cptC=0
-		for i in allshnames:
-			refs=[]
-			for j in allcolumns[cptC]:
-				for h in j[+1:]:
-					if "reference=" in h:
-						refs.append(i+"/"+h.split("=")[1])
-			if refs is not None:
-				for idx,r in enumerate(refs):
-					createDict(r.split('/')[1],"../applications/TEMPLATE/controllers/"+nameController+".py",idx)
-			cptC += 1
+		for namesheet in allshnames:		
+				for idx,r in enumerate(tabReferences):
+					if namesheet == r.split('/')[0]:
+						columnRef =""
+						for c in getColumns(wb.sheet_by_name(namesheet)):
+							for item in c: 
+								if 'reference' in item :
+									columnRef = c[0]
+						createDict(r.split('/')[1],columnRef,"../applications/TEMPLATE/controllers/"+mainName+".py",idx)
 
 		logging.info("Dicts written")
 
+		#Create Controllers
+		createController(allshnames,tabReferences,wb,mainName,script_path,sys.argv[1])
 
-
-		#used for calling scriptInit once page has loaded
-		with open("../applications/TEMPLATE/controllers/"+nameController+".py","a") as f:
-			logging.info("Successfully opened "+nameController+".py")
 			
-			
-			# then, we define all links to views from this file
-			for nameTable in allshnames: 
-				f.write('\ndef '+nameTable+'():')
-				f.write('\n    db = getDb()')
-				f.write('\n    table = db.'+nameTable)
-				# necessary to differentiate to prevent dal errors
-				#for each reference
-				for idx,r in enumerate(ref):
-					s=r.split("/")
-					#for each column of the table
-					for c in getColumns(wb.sheet_by_name(nameTable)):
-						if ((s[1] == c[0])) :
-							f.write('\n    db.'+s[0]+'.'+s[1]+'.represent = lambda val,row:boo'+sys.argv[1].split('.')[0]+str(idx)+'(val,row,db)')
-				f.write('\n    rows = db(table).select()')
-				f.write('\n    if (len(rows) == 0):')
-				f.write('\n        initData()')
-				f.write('\n    rows = db(table).select()')
-				
-				s="\n    form = FORM("
-				for c in getColumns(wb.sheet_by_name(nameTable)):
-					if (("type='integer'" in c) or( "type='float'" in c)):
-						s+="DIV(LABEL('"+c[0]+"'),INPUT(_name='"+c[0]+"',_type='checkbox'),_class='row'),"
-				s+="DIV(LABEL('Simple plot'),INPUT(_type='radio',_name='plot',_value='plot' ,value='plot'),LABEL('Histogram'),INPUT(_type='radio',_name='plot',_value='hist'),LABEL('Subplots'),INPUT(_type='radio',_name='plot',_value='sub'),_class='row'),"
-				s+="INPUT(_type='submit',_class='btn btn-primary',_name='makeplot'),_class='form-horizontal',_action='',_method='post')"
-				if "DIV" in s:
-					f.write(s)
-				else:
-					f.write("\n    form=''")
-				f.write("\n    plot=DIV('')")
-				f.write('\n    if ((len(request.post_vars)>2) and ("makeplot" in request.post_vars)):')
-				f.write("\n        vars = request.post_vars.keys()")
-				f.write("\n        vars.remove('makeplot')")
-				f.write('\n        fields=""')
-				f.write("\n        typeplot=''")   
-				f.write("\n        for v in vars :")
-				f.write("\n            if v == 'plot' :")
-				f.write("\n                typeplot = request.post_vars.plot")
-				f.write("\n            else :")
-				f.write("\n                fields+=str(v)+','")
-				f.write("\n        fields=fields[:-1]")
-				f.write("\n        nameTable ='"+nameTable+"'")
-				f.write("\n        foo = os.path.abspath(os.path.dirname(__file__))")
-				f.write("\n        foo = foo + '/../static/foo.png' ")
-				f.write("\n        makePlot(typeplot,fields,nameTable,foo)")
-				f.write("\n        plot=IMG(_src=URL('static','foo.png'),_alt='plot')")
-				f.write('\n    records=SQLFORM.grid(table,paginate=10,maxtextlength=256,showbuttontext=False)')
-				f.write('\n    return dict(form=form, plot=plot, records=records)')
-				
-			# used in case main table is empty	
-			f.write('\ndef initData():')
-			f.write('\n    from subprocess import check_call')
-			f.write('\n    try:\n        subprocess.check_call(["python",'+'"'+str(script_path)+"/scriptInit.py"+'","'+str(script_path)+"/"+sys.argv[1]+'"'+"])")
-			f.write('\n    except subprocess.CalledProcessError:\n        sys.exit("Error : scriptInit.py could not be reached")')
-			
-			#used to create plot
-			f.write('\ndef makePlot(typeplot,fields,nameTable,whereToSave):')
-			f.write('\n    from subprocess import check_call')
-			f.write('\n    try:')
-			f.write('\n        subprocess.check_call(["python",'+'"'+str(script_path)+"/scriptPlot.py"+'",typeplot,fields,nameTable,whereToSave])')
-			f.write('\n    except subprocess.CalledProcessError:')
-			f.write('\n        sys.exit("Error : scriptPlot.py could not be reached")')
-			
-		logging.info("Writing in "" finished")
+		logging.info("Writing in controller "+mainName+" finished")
 		logging.info("Closing file")
 		
 		###create new views
+		#Delete old folder
+		try:
+				if os.name =="nt":
+					subprocess.check_call(["DEL","/Q","/F","%cd%"+"\..\\applications\\TEMPLATE\\views\\"+sys.argv[1].split('.')[0]],shell=True)
+				else:
+					subprocess.call(["rm","-rfv","../applications/TEMPLATE/views/"+sys.argv[1].split('.')[0]+"/"])
+					
+				logging.info("Successfully deleted folder :"+sys.argv[1].split('.')[0])
+		except:
+			try:
+				if os.name =="nt":
+					subprocess.check_call(["mkdir","%cd%"+"\..\\applications\\TEMPLATE\\views\\"+sys.argv[1].split('.')[0]],shell=True)
+				else:
+					subprocess.call(["mkdir","-v","../applications/TEMPLATE/views/"+sys.argv[1].split('.')[0]+"/"])
+				logging.info("Successfully created view folde :"+nameTable)
+			except subprocess.CalledProcessError as er:
+				logging.exception("Error while creating view folder: "+er.message)
+				sys.exit("Error happened when creating the view folder"+sys.argv[1].split('.')[0])
+		
+		
 		try:
 			logging.info("Trying to create views")
 			for nameTable in allshnames:
 				if os.name =="nt":
-					subprocess.call(["mkdir","%cd%"+"\..\\applications\\TEMPLATE\\views\\"+sys.argv[1].split('.')[0]],shell=True)
 					subprocess.check_call(["copy","/Y","%cd%"+"\..\\applications\\TEMPLATE\\views\\default\\table.html","%cd%"+"\..\\applications\\TEMPLATE\\views\\"+sys.argv[1].split('.')[0]+"\\"+nameTable+".html"],shell=True)
 				else:
-					subprocess.call(["mkdir","-v","../applications/TEMPLATE/views/"+sys.argv[1].split('.')[0]+"/"])
 					subprocess.check_call(["cp","-v","../applications/TEMPLATE/views/default/table.html","../applications/TEMPLATE/views/"+sys.argv[1].split('.')[0]+"/"+nameTable+".html"])
 			
 				logging.info("Successfully created view :"+nameTable)
 		except subprocess.CalledProcessError as er:
-			logging.exception("Error while retrieving table.html : "+er.message)
-			sys.exit("table.html cannot be found")
+			logging.exception("Error while creating views files : "+er.message)
+			sys.exit("Error happened when creating views")
 			
 		###create new views end
 		
@@ -489,49 +552,10 @@ if __name__ == '__main__':
 			logging.exception("Error while retrieving backup_menu : "+er.message)
 			sys.exit("menu_backup cannot be found")
 			
-			
-		
-		listmenu=[]
-		allviews = os.listdir('../applications/TEMPLATE/views')
-		for view in allviews:
-			if ((os.path.isdir('../applications/TEMPLATE/views/'+view)) and ('default' not in view)):
-				allhtml = os.listdir('../applications/TEMPLATE/views/'+view)
-				submenus = []
-				submenus.append(str(view))
-				#for some reason, list dir display files in the chronological order in reverse on Linux
-				
-				if os.name !="nt":
-					allhtml=reversed(allhtml)
-				
-				for html in allhtml:
-					#to make sure it is a view
-					if html.endswith('.html'):
-						submenus.append(str(html.split('.')[0]))
-				listmenu.append(submenus)
-				
-		
-		## Shortcuts
-		with open("../applications/TEMPLATE/models/menu.py","a") as f:
-			logging.info("Writing menu shortcuts")
-			f.write("def _():\n    app = request.application\n    ctr = request.controller")
-			f.write("\n    response.menu += [")
-			s = ""
-			for menu in listmenu:
-				s += "\n        (T('"+menu[0]+"'), False, None, ["
-				go=False
-				for submenu in menu:
-					if go:
-						s +="\n            (T('"+submenu+"'), False, URL('"+menu[0]+"', '"+submenu+"')),"
-					else:
-						go=True
-				s=s[:-1]
-				s += "\n        ])"
-				s += ","
-			s = s[:-1]
-			s+=("\n    ]\n_()")
-			f.write(s)
-            
-			logging.info("Menu done")
+		listmenu = createListeMenu()	
+		#Shortcuts
+		createMenu(listmenu)
+
 			
 		### Making menu end
 			
