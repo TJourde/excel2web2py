@@ -24,12 +24,19 @@ def insertRowsData(nameTable,sheet,cursor):
 			vals = ""
 			if not isThereId:
 				vals += str(idcpt)+","
-			for rowval in sheet.row_values(rownum):
+			for idx,rowval in enumerate(sheet.row_values(rownum)):
 				#for null value
-				try:
-					vals+='"'+rowval+'"'+','
-				except:
-					vals+='"'+str(rowval)+'"'+','
+				if rowval is "":
+					if (('integer' in sheet.col_values(idx)[0]) or ('float' in sheet.col_values(idx)[0])):
+						vals += '"0",'
+					else:
+						vals += '"",'
+				else:
+				#for int/float value
+					try:
+						vals+='"'+rowval+'"'+','
+					except:
+						vals+='"'+str(rowval)+'"'+','
 			vals=vals[:-1]
 			query+=vals
 			query+=')'
