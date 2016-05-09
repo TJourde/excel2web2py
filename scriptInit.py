@@ -6,8 +6,6 @@ import sqlite3
 import logging
 #lib read excel files
 import xlrd
-import logging
-import subprocess
 import script
 
 #execute sql request to insert data
