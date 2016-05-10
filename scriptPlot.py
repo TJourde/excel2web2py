@@ -44,14 +44,22 @@ if len(sys.argv) > 3:
 				if item[idx] > zmax:
 					zmax = item[idx]
 				r.append(item[idx])
+			length_data=len(r)-1
 			r.append(0)
-			nres.append(list(zip([i*1.0 for i in range(0,len(r))],r)))
+			zipr=zip([(i-1)*1.0 for i in range(0,len(r))],r)
+			for idx,item in enumerate(zipr):
+				if item[0] < 0.0:
+					zipr[idx]=(0.0,0.0)
+				#minus 1 because 0 is the first element
+				if item[0] == length_data:
+					zipr[idx]=((length_data-1)*1.0,0.0)
+			nres.append(list(zipr))
 		poly = PolyCollection(nres, facecolors=[cc(letter) for idx,letter in enumerate(colors) if idx < len(fields.split(','))])
 		poly.set_alpha(0.7)
 		ax.add_collection3d(poly, zs=zs, zdir='y')
 		ax.set_xlabel('Number')
-		#-1 && +1 because we add twice 0 which is not a value from the query
-		ax.set_xlim3d(-1, len(res)+1)
+		#minus 1 because we add an element at the same X that the last element but with Y=0.0 at the end
+		ax.set_xlim3d(0, len(res)-1)
 		label = "\n"*len(fields.split(','))
 		for idx,f in enumerate(fields.split(',')):
 			label+=f+" is "+colors[idx]+"\n"
