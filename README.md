@@ -60,7 +60,10 @@ __Important__: It is highly recommended to download Python(x,y) as it comes pack
 If you have, you want to check out the documentation [here](http://matplotlib.org/users/installing.html#windows) to lookup what modules you will need to install.
 
 __Unix:__   
-On Unix, install these packages through the terminal using your favorite package manager.  
+On Unix, python comes prepackaged on most distributions but you may want to check what version you are using.  
+>python --version
+
+Install these packages through the terminal using your favorite package manager.  
 Example: `apt-get install xlrd`
 
 __Windows__:  
@@ -69,7 +72,7 @@ Xlrd is packaged with this application, run :
 > cd path/to/xlrd  
 python setup.py install
 
-You may need to execute those operations as an administrator though(put `sudo` first before an install adn input the admin's password)
+You may need to execute those operations as an administrator though (put `sudo` first before an install and input the admin's password)
 
 Installation :
 --------------

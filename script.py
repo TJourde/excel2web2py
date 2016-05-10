@@ -318,9 +318,9 @@ def requestDrop(tableHere,allshnames,allfiles):
 			print "Stopping script"
 			exit()
 #Create controllers in web2py, define represent which calls boo functions and define forms to create plots
-#I:all sheets'name,list of references,the file's workbook, the file's name,the path of storage.sqlite,the path of the file
+#I:all list containing all sheets'name,tabReferences is a list of relation of references between tables/sheets ("A/B"),workbook created from the file in arg, the file's name minus path and extension,the path of storage.sqlite,the path of the file
 #O:None
-def createControllers(allshnames,tabReferences,wb,mainName,script_path,myFile):
+def createControllers(allshnames,tabReferences,wb,mainName,script_path,pathFile):
 
 	#used for calling scriptInit once page has loaded
 	with open("../applications/TEMPLATE/controllers/"+mainName+".py","a") as f:
@@ -380,7 +380,7 @@ def createControllers(allshnames,tabReferences,wb,mainName,script_path,myFile):
 		# used in case main table is empty	
 		f.write('\ndef initData():')
 		f.write('\n    from subprocess import check_call')
-		f.write('\n    try:\n        subprocess.check_call(["python",'+'"'+str(script_path)+"/scriptInit.py"+'","'+str(script_path)+"/"+myFile+'"'+"])")
+		f.write('\n    try:\n        subprocess.check_call(["python",'+'"'+str(script_path)+"/scriptInit.py"+'","'+str(script_path)+"/"+pathFile+'"'+"])")
 		f.write('\n    except subprocess.CalledProcessError:\n        sys.exit("Error : scriptInit.py could not be reached")')
 		
 		#used to create plot

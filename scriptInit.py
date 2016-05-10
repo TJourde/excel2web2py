@@ -8,7 +8,11 @@ import logging
 import xlrd
 import script
 
-#execute sql request to insert data
+#this script is executed by a controller on web2py when the first main table is empty, it will fill the database with records from the file
+
+#execute sql requests to insert data
+#I:the name of the table, the sheet with the same name, the cursor to execute queries
+#O:None
 def insertRowsData(nameTable,sheet,cursor):
 	path=str( script.createFolder())
 	logpath = str( script.createLogs(path))
