@@ -91,7 +91,7 @@ def isNametATableName(name):
 	logpath = str( createLogs(path))
 	logging.basicConfig(filename=logpath,level=logging.DEBUG)
 	
-	if(" " in pathFile):
+	if(" " in name):
 		logging.error("File's name has spaces")
 		sys.exit("Error: file's name has spaces")
 	
@@ -541,22 +541,22 @@ if __name__ == '__main__':
 		#Delete old folder
 		try:
 				if os.name =="nt":
-					subprocess.check_call(["DEL","/Q","/F","%cd%"+"\..\\applications\\TEMPLATE\\views\\"+sys.argv[1].split('.')[0]],shell=True)
+					subprocess.call(["RD","/S","/Q","%cd%"+"\..\\applications\\TEMPLATE\\views\\"+mainName],shell=True)
 				else:
-					subprocess.call(["rm","-rfv","../applications/TEMPLATE/views/"+sys.argv[1].split('.')[0]+"/"])
+					subprocess.call(["rm","-rfv","../applications/TEMPLATE/views/"+mainName+"/"])
 					
-				logging.info("Successfully deleted folder :"+sys.argv[1].split('.')[0])
-		except:
-			try:
-				if os.name =="nt":
-					subprocess.check_call(["mkdir","%cd%"+"\..\\applications\\TEMPLATE\\views\\"+sys.argv[1].split('.')[0]],shell=True)
-				else:
-					subprocess.call(["mkdir","-v","../applications/TEMPLATE/views/"+sys.argv[1].split('.')[0]+"/"])
-				logging.info("Successfully created view folde :"+nameTable)
-			except subprocess.CalledProcessError as er:
-				logging.exception("Error while creating view folder: "+er.message)
-				sys.exit("Error happened when creating the view folder"+sys.argv[1].split('.')[0])
-		
+				logging.info("Successfully deleted folder :"+mainName)
+		except subprocess.CalledProcessError as er:
+			print er.message
+		try:
+			if os.name =="nt":
+				subprocess.call(["mkdir","%cd%"+"\..\\applications\\TEMPLATE\\views\\"+mainName],shell=True)
+			else:
+				subprocess.call(["mkdir","-v","../applications/TEMPLATE/views/"+mainName+"/"])
+			logging.info("Successfully created view folder :"+mainName)
+		except subprocess.CalledProcessError as er:
+			logging.exception("Error while creating view folder: "+er.message)
+			sys.exit("Error happened when creating the view folder"+mainName)
 		
 		try:
 			logging.info("Trying to create views")
