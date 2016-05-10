@@ -4,6 +4,18 @@ import sys
 import matplotlib.pyplot as plt
 import sqlite3
 import script
+from mpl_toolkits.mplot3d import Axes3D
+from matplotlib.collections import PolyCollection
+from matplotlib.colors import colorConverter
+import matplotlib.pyplot as plt
+import numpy as np
+
+#Color Converter from matplotlib
+#I:letter
+#O:Color
+def cc(arg):
+    return colorConverter.to_rgba(arg, alpha=0.6)
+
 if len(sys.argv) > 3:
 	conn = sqlite3.connect(script.getStoragePath())
 	c = conn.cursor()
@@ -11,11 +23,42 @@ if len(sys.argv) > 3:
 	fields = sys.argv[2]
 	nameTable = sys.argv[3]
 	whereToSave = sys.argv[4]
-	if typeplot == 'hist' :
+	colors = ['r','b','g','y','c','m','k','w']
+	if ((typeplot == '3dpoly') and (len(fields.split(','))<len(colors))):
 		c.execute("Select "+fields+" from "+nameTable)
-		plt.hist(c.fetchall())
-		plt.xlabel('Value')
-		plt.ylabel('Number')
+		res = c.fetchall()
+		fig = plt.figure()
+		ax = fig.gca(projection='3d')
+
+		xs = np.arange(0, 10, 0.4)
+		verts = []
+		zs = [1.0*i for i in range(0,len(fields.split(',')))]
+		nres = []
+		zmin = 0
+		zmax = 0
+		for idx in range(0,len(fields.split(','))):
+			r=[0]
+			for item in res:
+				if item[idx] < zmin:
+					zmin = item[idx]
+				if item[idx] > zmax:
+					zmax = item[idx]
+				r.append(item[idx])
+			r.append(0)
+			nres.append(list(zip([i*1.0 for i in range(0,len(r))],r)))
+		poly = PolyCollection(nres, facecolors=[cc(letter) for idx,letter in enumerate(colors) if idx < len(fields.split(','))])
+		poly.set_alpha(0.7)
+		ax.add_collection3d(poly, zs=zs, zdir='y')
+		ax.set_xlabel('Number')
+		#-1 && +1 because we add twice 0 which is not a value from the query
+		ax.set_xlim3d(-1, len(res)+1)
+		label = "\n"*len(fields.split(','))
+		for idx,f in enumerate(fields.split(',')):
+			label+=f+" is "+colors[idx]+"\n"
+		ax.set_ylabel(label)
+		ax.set_ylim3d(-1, len(fields.split(',')))
+		ax.set_zlabel('Value')
+		ax.set_zlim3d(zmin, zmax)
 	elif typeplot == 'sub' :
 		for idx,item in enumerate(fields.split(',')) :
 			plt.subplot(len(fields.split(',')),1,idx+1)
@@ -25,9 +68,6 @@ if len(sys.argv) > 3:
 		plt.xlabel('Number')
 	else :
 		c.execute("Select "+fields+" from "+nameTable)
-		labels=""
-		for f in fields.split(','):
-			labels+=f
 		res = c.fetchall()
 		#res is a list of tuple
 		cpt=0
@@ -40,8 +80,9 @@ if len(sys.argv) > 3:
 			cpt+=1
 		plt.xlabel('Number')
 		plt.ylabel('Value')
+		
+	plt.legend(bbox_to_anchor=(0., 1.02, 1., .102), loc=1,ncol=len(fields.split(',')), mode="expand", borderaxespad=0.)
 	conn.close()
-	plt.legend(bbox_to_anchor=(0., 1.02, 1., .102), loc=1,ncol=2, mode="expand", borderaxespad=0.)
-	plt.title('Plot of A')
+	plt.title('Plot of '+nameTable)
 	plt.savefig(whereToSave)
 	plt.clf()

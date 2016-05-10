@@ -1,12 +1,18 @@
 #!usr/bin/env/python
 # -*- coding: utf-8 -*-
-import sys, os, time, errno
-import os.path
-import sqlite3
-import logging
-#lib read excel files
-import xlrd
-import subprocess
+try:
+	import sys, os, time, errno
+	import os.path
+	import sqlite3
+	import logging
+	#lib read excel files
+	import xlrd
+	import subprocess
+	#not needed here, just to test its presence
+	import matplotlib
+
+except ImportError as er:
+	sys.exit(er.message)
 
 #Retrieve path of storage.sqlite to help executing queries
 #I:None
@@ -351,7 +357,7 @@ def createControllers(allshnames,tabReferences,wb,mainName,script_path,pathFile)
 			for c in getColumns(wb.sheet_by_name(nameTable)):
 				if (("type='integer'" in c) or( "type='float'" in c)):
 					s+="DIV(LABEL('"+c[0]+"'),INPUT(_name='"+c[0]+"',_type='checkbox'),_class='row'),"
-			s+="DIV(LABEL('Simple plot'),INPUT(_type='radio',_name='plot',_value='plot' ,value='plot'),LABEL('Histogram'),INPUT(_type='radio',_name='plot',_value='hist'),LABEL('Subplots'),INPUT(_type='radio',_name='plot',_value='sub'),_class='row'),"
+			s+="DIV(LABEL('Simple plot'),INPUT(_type='radio',_name='plot',_value='plot' ,value='plot'),LABEL('3D Poly'),INPUT(_type='radio',_name='plot',_value='3dpoly'),LABEL('Subplots'),INPUT(_type='radio',_name='plot',_value='sub'),_class='row'),"
 			s+="INPUT(_type='submit',_class='btn btn-primary',_name='makeplot'),_class='form-horizontal',_action='',_method='post')"
 			if "DIV" in s:
 				f.write(s)
