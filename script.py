@@ -156,7 +156,7 @@ def getColumns(sheet):
 #Multiple boo are needed to ensure multiple references
 #I:the referenced table string,the column's name,the path of the file and the reference nuber (number of time createDict was called)
 #O:None
-def createDict(ref,col,filePath,numRef):
+def createDict(mainName,ref,col,filePath,numRef):
 	#ref: name of table referenced
 	#filePath: file's path which will be modified
 	#numRef : reference number in case of multiple references in 'sheet'
@@ -168,8 +168,7 @@ def createDict(ref,col,filePath,numRef):
 		##Defining reference dict
 				
 		# boo links to dict for sqlform.grid
-		nameFunc = sys.argv[1].split('/')[-1].split('.')[0]
-		f.write('\ndef boo'+str(nameFunc)+str(numRef)+'(value,row,db):')
+		f.write('\ndef boo'+str(mainName)+str(numRef)+'(value,row,db):')
 		f.write('\n    listOfRefs = []')
 		f.write('\n    listAttr=[]')
 		f.write('\n    rowvals = row.'+col+'.split("|")')
@@ -194,9 +193,9 @@ def createDict(ref,col,filePath,numRef):
 # Defining tables in the model and return references
 #I:path of the file,all sheets'name, all columns'name
 #O:list tabReferences
-def createTables(pathFile,allshnames,allcolumns):           
+def createTables(mainName,allshnames,allcolumns):           
 	tabReferences = [] #used also to write represent attr in default controller
-	with open("../applications/TEMPLATE/models/db_"+pathFile.split('.')[0]+".py","a") as f:
+	with open("../applications/TEMPLATE/models/db_"+mainName+".py","a") as f:
 		logging.info("Successfully opened db")
 		logging.info("Creating tables")
 		##Defining sheet table
@@ -302,7 +301,7 @@ def requestDrop(tableHere,allshnames,allfiles):
 					try:
 						logging.info("Trying delete file")
 						if os.name =="nt":
-							subprocess.check_call(["DEL","%cd%"+"\..\\applications\\TEMPLATE\\databases\\"+str(delTable)],shell=True)
+							subprocess.check_call(["DEL","..\\applications\\TEMPLATE\\databases\\"+str(delTable)],shell=True)
 						else:
 							subprocess.check_call(["rm","-rfv","../applications/TEMPLATE/databases/"+str(delTable)])
 						
@@ -327,7 +326,6 @@ def requestDrop(tableHere,allshnames,allfiles):
 #I:all list containing all sheets'name,tabReferences is a list of relation of references between tables/sheets ("A/B"),workbook created from the file in arg, the file's name minus path and extension,the path of storage.sqlite,the path of the file
 #O:None
 def createControllers(allshnames,tabReferences,wb,mainName,script_path,pathFile):
-
 	#used for calling scriptInit once page has loaded
 	with open("../applications/TEMPLATE/controllers/"+mainName+".py","a") as f:
 		logging.info("Successfully opened "+mainName+".py")
@@ -386,14 +384,14 @@ def createControllers(allshnames,tabReferences,wb,mainName,script_path,pathFile)
 		# used in case main table is empty	
 		f.write('\ndef initData():')
 		f.write('\n    from subprocess import check_call')
-		f.write('\n    try:\n        subprocess.check_call(["python",'+'"'+str(script_path)+"/scriptInit.py"+'","'+str(script_path)+"/"+pathFile+'"'+"])")
+		f.write('\n    try:\n        subprocess.check_call(["python",'+'"'+str(script_path).replace("\\","/")+"/scriptInit.py"+'","'+pathFile.replace("\\","/")+'"'+"])")
 		f.write('\n    except subprocess.CalledProcessError:\n        sys.exit("Error : scriptInit.py could not be reached")')
 		
 		#used to create plot
 		f.write('\ndef makePlot(typeplot,fields,nameTable,whereToSave):')
 		f.write('\n    from subprocess import check_call')
 		f.write('\n    try:')
-		f.write('\n        subprocess.check_call(["python",'+'"'+str(script_path)+"/scriptPlot.py"+'",typeplot,fields,nameTable,whereToSave])')
+		f.write('\n        subprocess.check_call(["python",'+'"'+str(script_path).replace("\\","/")+"/scriptPlot.py"+'",typeplot,fields,nameTable,whereToSave])')
 		f.write('\n    except subprocess.CalledProcessError:')
 		f.write('\n        sys.exit("Error : scriptPlot.py could not be reached")')					
 
@@ -459,6 +457,15 @@ if __name__ == '__main__':
 	#if there is at least an argument, the script is launched
 	if( len(sys.argv)>1 ):
 		logging.info("File found")
+		#changing dir to excel2web2py
+		try:
+			logging.info("Trying to look for excel2web2py folder")
+			os.chdir(script_path)
+			logging.info("excel2web2py* folder found")
+		except os.error as er:
+			logging.exception("Error while looking for excel2web2py folder: " + er.message)
+			sys.exit("Cannot find excel2web2py folder")
+		
 		logging.info("Checking if file is well formatted")
 		fileWellFormatted(sys.argv[1])
 		logging.info("File is well formatted")
@@ -475,7 +482,8 @@ if __name__ == '__main__':
 		logging.info("Successfully opened the sheets")
 		logging.info("Trying to retrieve the names of the columns of each sheets")
 		allcolumns = []
-		mainName = sys.argv[1].split('.')[0]
+		mainName = sys.argv[2].split('.')[0]
+		
 		for nameSheet in allsheets:
 			allcolumns.append(getColumns(nameSheet))
 		logging.info("Successfully retrieved the name of the columns")
@@ -483,16 +491,16 @@ if __name__ == '__main__':
 		try:
 			logging.info("Trying to recover backup of db")
 			if os.name =="nt":
-				subprocess.check_call(["copy","/Y","%cd%"+"\..\\applications\\TEMPLATE\\models\\db_backup.py","%cd%"+"\..\\applications\\TEMPLATE\\models\\db_"+mainName+".py"],shell=True)
+				subprocess.check_call(["echo",'..\\applications\\TEMPLATE\\models\\db_'+mainName+'.py'],shell=True)
+				subprocess.check_call(["copy","/Y",'..\\applications\\TEMPLATE\\models\\db_backup.py','..\\applications\\TEMPLATE\\models\\db_'+mainName+'.py'],shell=True)
 			else:
 				subprocess.check_call(["cp","-v","../applications/TEMPLATE/models/db_backup.py","../applications/TEMPLATE/models/db_"+mainName+".py"])	
 			logging.info("Successfully recover backup of db")
 		except subprocess.CalledProcessError as er:
 			logging.exception("Error while retrieving db_backup: " + er.message)
 			sys.exit("Cannot access db_backup")
-			
 		
-		tabReferences = createTables(sys.argv[1],allshnames,allcolumns)
+		tabReferences = createTables(mainName,allshnames,allcolumns)
 		allfiles = os.listdir('../applications/TEMPLATE/databases')
 		tableHere = isTableAlreadyThere(allfiles,allshnames)
 		if tableHere is not "":
@@ -510,7 +518,7 @@ if __name__ == '__main__':
 		try:
 			logging.info("Trying to recover backup of default")
 			if os.name =="nt":
-				subprocess.check_call(["copy","/Y","%cd%"+"\..\\applications\\TEMPLATE\\controllers\\default_backup.py","%cd%"+"\..\\applications\\TEMPLATE\\controllers\\"+mainName+".py"],shell=True)
+				subprocess.check_call(["copy","/Y","..\\applications\\TEMPLATE\\controllers\\default_backup.py","..\\applications\\TEMPLATE\\controllers\\"+mainName+".py"],shell=True)
 			else:
 				subprocess.check_call(["cp","-v","../applications/TEMPLATE/controllers/default_backup.py","../applications/TEMPLATE/controllers/"+mainName+".py"])
 			
@@ -532,7 +540,7 @@ if __name__ == '__main__':
 							for item in c: 
 								if 'reference' in item :
 									columnRef = c[0]
-						createDict(r.split('/')[1],columnRef,"../applications/TEMPLATE/controllers/"+mainName+".py",idx)
+						createDict(mainName,r.split('/')[1],columnRef,"../applications/TEMPLATE/controllers/"+mainName+".py",idx)
 
 		logging.info("Dicts written")
 
@@ -547,7 +555,7 @@ if __name__ == '__main__':
 		#Delete old folder
 		try:
 				if os.name =="nt":
-					subprocess.call(["RD","/S","/Q","%cd%"+"\..\\applications\\TEMPLATE\\views\\"+mainName],shell=True)
+					subprocess.call(["RD","/S","/Q","..\\applications\\TEMPLATE\\views\\"+mainName],shell=True)
 				else:
 					subprocess.call(["rm","-rfv","../applications/TEMPLATE/views/"+mainName+"/"])
 					
@@ -556,7 +564,7 @@ if __name__ == '__main__':
 			print er.message
 		try:
 			if os.name =="nt":
-				subprocess.call(["mkdir","%cd%"+"\..\\applications\\TEMPLATE\\views\\"+mainName],shell=True)
+				subprocess.call(["mkdir","..\\applications\\TEMPLATE\\views\\"+mainName],shell=True)
 			else:
 				subprocess.call(["mkdir","-v","../applications/TEMPLATE/views/"+mainName+"/"])
 			logging.info("Successfully created view folder :"+mainName)
@@ -568,9 +576,9 @@ if __name__ == '__main__':
 			logging.info("Trying to create views")
 			for nameTable in allshnames:
 				if os.name =="nt":
-					subprocess.check_call(["copy","/Y","%cd%"+"\..\\applications\\TEMPLATE\\views\\default\\table.html","%cd%"+"\..\\applications\\TEMPLATE\\views\\"+sys.argv[1].split('.')[0]+"\\"+nameTable+".html"],shell=True)
+					subprocess.check_call(["copy","/Y","..\\applications\\TEMPLATE\\views\\default\\table.html","..\\applications\\TEMPLATE\\views\\"+mainName+"\\"+nameTable+".html"],shell=True)
 				else:
-					subprocess.check_call(["cp","-v","../applications/TEMPLATE/views/default/table.html","../applications/TEMPLATE/views/"+sys.argv[1].split('.')[0]+"/"+nameTable+".html"])
+					subprocess.check_call(["cp","-v","../applications/TEMPLATE/views/default/table.html","../applications/TEMPLATE/views/"+mainName+"/"+nameTable+".html"])
 			
 				logging.info("Successfully created view :"+nameTable)
 		except subprocess.CalledProcessError as er:
@@ -584,7 +592,7 @@ if __name__ == '__main__':
 		try:
 			logging.info("Trying to recover backup of menu")
 			if os.name =="nt":
-				subprocess.check_call(["copy","/Y","%cd%"+"\..\\applications\\TEMPLATE\\models\\backup_menu.py","%cd%"+"\..\\applications\\TEMPLATE\\models\\menu.py"],shell=True)
+				subprocess.check_call(["copy","/Y","..\\applications\\TEMPLATE\\models\\backup_menu.py","..\\applications\\TEMPLATE\\models\\menu.py"],shell=True)
 			else:
 				subprocess.check_call(["cp","-v","../applications/TEMPLATE/models/backup_menu.py","../applications/TEMPLATE/models/menu.py"])
 			
@@ -601,19 +609,19 @@ if __name__ == '__main__':
 		### Making menu end
 			
 		###launch web2py
-		
+		'''
 		try:
 			logging.info("Trying to launch web2py")
 			if os.name =="nt": 
-				subprocess.check_call(["%cd%\..\\web2py.exe"],shell=True)
+				subprocess.check_call(["%cd%..\\web2py.exe"],shell=True)
 			else:
 				subprocess.check_call(["python", "../web2py.py"])
 		except subprocess.CalledProcessError as er:
 			logging.exception("Error while executing web2py : " + er.message)
 			sys.exit("Error: python is no present on this computer or web2py could not be reached")
 		
-		###launch web2py end
-
+		launch web2py end
+		'''
 	else:
 		sys.exit("Error : no file selected")
 

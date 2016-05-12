@@ -70,6 +70,7 @@ if len(sys.argv) > 1:
 	logging.basicConfig(filename=logpath,level=logging.DEBUG)
 	logging.info("scriptInit.py is executed")
 	logging.info("Trying to open file")
+	script_path=os.path.abspath(os.path.dirname(__file__))
 	wb = script.tryOpenWorkbookFile(sys.argv[1])
 	logging.info("Successfully opened the file")
 	logging.info("Trying to get sheets")

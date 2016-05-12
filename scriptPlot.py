@@ -53,12 +53,13 @@ if len(sys.argv) > 3:
 				#minus 1 because 0 is the first element
 				if item[0] == length_data:
 					zipr[idx]=((length_data-1)*1.0,0.0)
+			print zipr
 			nres.append(list(zipr))
 		poly = PolyCollection(nres, facecolors=[cc(letter) for idx,letter in enumerate(colors) if idx < len(fields.split(','))])
 		poly.set_alpha(0.7)
 		ax.add_collection3d(poly, zs=zs, zdir='y')
 		ax.set_xlabel('Number')
-		#minus 1 because we add an element at the same X that the last element but with Y=0.0 at the end
+		#minus 1 because we add an element (0.0,0.0) at the end
 		ax.set_xlim3d(0, len(res)-1)
 		label = "\n"*len(fields.split(','))
 		for idx,f in enumerate(fields.split(',')):
