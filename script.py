@@ -491,7 +491,6 @@ if __name__ == '__main__':
 		try:
 			logging.info("Trying to recover backup of db")
 			if os.name =="nt":
-				subprocess.check_call(["echo",'..\\applications\\TEMPLATE\\models\\db_'+mainName+'.py'],shell=True)
 				subprocess.check_call(["copy","/Y",'..\\applications\\TEMPLATE\\models\\db_backup.py','..\\applications\\TEMPLATE\\models\\db_'+mainName+'.py'],shell=True)
 			else:
 				subprocess.check_call(["cp","-v","../applications/TEMPLATE/models/db_backup.py","../applications/TEMPLATE/models/db_"+mainName+".py"])	
