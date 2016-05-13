@@ -156,7 +156,7 @@ def dropTable (nameTable):
 #return a list of each column's name (first line of a sheet has it)
 #I:A sheet
 #O:list namecols
-def getColumns(sheet):
+def getColumns(sheet,allshnames):
 	path=str( createFolder())
 	logpath = str( createLogs(path))
 	logging.basicConfig(filename=logpath,level=logging.DEBUG)
@@ -174,6 +174,21 @@ def getColumns(sheet):
 		except (UnicodeError):
 			logging.exception(sheet.col_values(colnum)[0]+" Column's name couldn't be encoded in ascii")
 			sys.exit(sheet.col_values(colnum)[0]+" Error: Column's name couldn't be encoded in ascii")
+		for item in nc:
+			if "reference=" in item:
+				nvref = item.split("=")
+				if len(nvref) > 1 :
+					referenceSheet = False
+					for nameSheet in allshnames:
+						if nvref[1] == nameSheet:
+							referenceSheet = True
+					if not referenceSheet:
+						logging.error("Reference without a sheet's name "+nvref[0])
+						sys.exit("A reference had no name corresponding to a sheet")
+				else:
+					logging.error("Reference with no name "+nvref[0])
+					sys.exit("A reference had no name attached")
+			
 	return namecols
 
 #Write in a file the function boo+smth which executes a sql query on a referenced table to generate a table in the sqlform.grid of the view
@@ -239,11 +254,7 @@ def createTables(mainName,allshnames,allcolumns):
 						s+=',"id"'
 					elif "reference=" in item:
 						nvref = item.split("=")
-						if len(nvref) > 1 :
-							tabReferences.append(nameSheet+"/"+nvref[1])
-						else:
-							logging.error("Reference with no name "+c[0])
-							sys.exit("A reference had no name attached : please modify the file")
+						tabReferences.append(nameSheet+"/"+nvref[1])
 					elif (("type='integer'" == item) or ("type='float'" == item) or ("type='string'" == item)) :
 							s+=","+item.encode('utf-8')
 				f.write(',Field("'+c[0].encode('utf-8')+'"'+s+')')
@@ -345,7 +356,7 @@ def createControllers(allshnames,tabReferences,wb,mainName,script_path,pathFile)
 			for idx,r in enumerate(tabReferences):
 				s=r.split("/")
 				#for each column of the table
-				for c in getColumns(wb.sheet_by_name(nameTable)):
+				for c in getColumns(wb.sheet_by_name(nameTable),allshnames):
 					for item in c: 
 						if 'reference' in item :
 						#s1 is what is referenced c0 is the name of the column which references item1
@@ -359,7 +370,7 @@ def createControllers(allshnames,tabReferences,wb,mainName,script_path,pathFile)
 			f.write('\n    rows = db(table).select()')
 			
 			s="\n    form = FORM("
-			for c in getColumns(wb.sheet_by_name(nameTable)):
+			for c in getColumns(wb.sheet_by_name(nameTable),allshnames):
 				if (("type='integer'" in c) or( "type='float'" in c)):
 					s+="DIV(LABEL('"+c[0]+"'),INPUT(_name='"+c[0]+"',_type='checkbox'),_class='row'),"
 			s+="DIV(LABEL('Simple plot'),INPUT(_type='radio',_name='plot',_value='plot' ,value='plot'),LABEL('3D Poly'),INPUT(_type='radio',_name='plot',_value='3dpoly'),LABEL('Subplots'),INPUT(_type='radio',_name='plot',_value='sub'),_class='row'),"
@@ -504,7 +515,7 @@ if __name__ == '__main__':
 		
 		
 		for nameSheet in allsheets:
-			allcolumns.append(getColumns(nameSheet))
+			allcolumns.append(getColumns(nameSheet,allshnames))
 		logging.info("Successfully retrieved the name of the columns")
 	
 		try:
@@ -553,7 +564,7 @@ if __name__ == '__main__':
 				for idx,r in enumerate(tabReferences):
 					if namesheet == r.split('/')[0]:
 						columnRef =""
-						for c in getColumns(wb.sheet_by_name(namesheet)):
+						for c in getColumns(wb.sheet_by_name(namesheet),allshnames):
 							for item in c: 
 								if 'reference' in item :
 									columnRef = c[0]

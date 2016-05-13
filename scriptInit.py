@@ -79,7 +79,7 @@ if len(sys.argv) > 1:
 	allshnames = wb.sheet_names()
 	allcolumns = []
 	for i in allsheets:
-		allcolumns.append(script.getColumns(i))
+		allcolumns.append(script.getColumns(i,allshnames))
 	logging.info("Successfully opened the sheets")
 	logging.info("Connecting to the database")
 	# Insert rows of data
