@@ -24,42 +24,47 @@ if len(sys.argv) > 3:
 	nameTable = sys.argv[3]
 	whereToSave = sys.argv[4]
 	colors = ['r','b','g','y','c','m','k','w']
+	#8 columns at once max
 	if ((typeplot == '3dpoly') and (len(fields.split(','))<len(colors))):
 		c.execute("Select "+fields+" from "+nameTable)
 		res = c.fetchall()
+		#res is a list of tuples [(line1.elt1,line2.elt1,line3.elt1),(line1.elt2,line2.elt2,line3.elt2)...]
 		fig = plt.figure()
 		ax = fig.gca(projection='3d')
-
-		xs = np.arange(0, 10, 0.4)
-		verts = []
 		zs = [1.0*i for i in range(0,len(fields.split(',')))]
+		#nres will contain the sorted lists [(line1.elt1,line1.elt2,...),(...)...]
 		nres = []
 		zmin = 0
 		zmax = 0
+		# number of lines == len(fields.split(',')
 		for idx in range(0,len(fields.split(','))):
-			r=[0]
+			line=[0]
 			for item in res:
 				if item[idx] < zmin:
 					zmin = item[idx]
 				if item[idx] > zmax:
 					zmax = item[idx]
-				r.append(item[idx])
-			length_data=len(r)-1
-			r.append(0)
-			zipr=zip([(i-1)*1.0 for i in range(0,len(r))],r)
-			for idx,item in enumerate(zipr):
-				if item[0] < 0.0:
-					zipr[idx]=(0.0,0.0)
-				#minus 1 because 0 is the first element
-				if item[0] == length_data:
-					zipr[idx]=((length_data-1)*1.0,0.0)
-			print zipr
+				line.append(item[idx])
+			#number of dots
+			length_data=len(line)-1
+			line.append(0)
+			zipr=zip([(i-1)*1.0 for i in range(0,len(line))],line)
+			
+			#create a point at y = 0.0 on the first and last elt
+			zipr[0]=(0.0,0.0)
+			#minus 1 because 0 is the first element
+			zipr[-1]=((length_data-1)*1.0,0.0)
+			
 			nres.append(list(zipr))
+		
+		#create the polys	
 		poly = PolyCollection(nres, facecolors=[cc(letter) for idx,letter in enumerate(colors) if idx < len(fields.split(','))])
+		#transparency
 		poly.set_alpha(0.7)
+		#create the plot
 		ax.add_collection3d(poly, zs=zs, zdir='y')
 		ax.set_xlabel('Number')
-		#minus 1 because we add an element (0.0,0.0) at the end
+		#minus 1 because we add an element (0.0,0.0) at the end of each poly
 		ax.set_xlim3d(0, len(res)-1)
 		label = "\n"*len(fields.split(','))
 		for idx,f in enumerate(fields.split(',')):

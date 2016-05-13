@@ -8,7 +8,9 @@ import logging
 import xlrd
 import script
 
-#this script is executed by a controller on web2py when the first main table is empty, it will fill the database with records from the file
+#this script is executed by the default controller after executing the new model, it will fill the database with records from the uploaded file
+#takes one arg : the uploaded file
+
 
 #execute sql requests to insert data
 #I:the name of the table, the sheet with the same name, the cursor to execute queries
@@ -58,11 +60,10 @@ def insertRowsData(nameTable,sheet,cursor):
 			cursor.execute(query)
 		except sqlite3.Error as er:
 			print("Ins:Smth went wrong")
-			logging.warning( er.message)
+			logging.warning(er.message)
 			pass			
 			#sys.exit("Erreur insertion")
 	
-
 
 if len(sys.argv) > 1:
 	path=str(script.createFolder())

@@ -98,36 +98,60 @@ def isNametATableName(name):
 	logging.basicConfig(filename=logpath,level=logging.DEBUG)
 	
 	if(" " in name):
-		logging.error("File's name has spaces")
-		sys.exit("Error: file's name has spaces")
+		logging.error("Name has spaces "+name)
+		sys.exit("Error: Name has spaces"+name)
 	
 	try:
 		name.encode('ascii')
 	
 	except (UnicodeError):
-		logging.exception("Name couldn't be encoded in ascii")
-		sys.exit("Name couldn't be encoded in ascii")
+		logging.exception("Name couldn't be encoded in ascii "+name)
+		sys.exit("Name couldn't be encoded in ascii "+name)
 	
 	for i in name.split("_"):
 		if not i.isalpha():
-			logging.exception("Namehas special characters: "+ name)
+			logging.exception("Name has special characters: "+ name)
 			sys.exit("Name has special characters: "+ name )
 		
 #Execute a Drop table sql query
 #I:string name of the table, the cursor which executes queries
 #O:None
-def dropTable (nameTable,cursor):
+def dropTable (nameTable):
 	path=str( createFolder())
 	logpath = str( createLogs(path))
 	logging.basicConfig(filename=logpath,level=logging.DEBUG)
-	try:
-		logging.info("DROP TABLE "+str(nameTable))
-		cursor.execute("DROP TABLE "+str(nameTable))
-	except  sqlite3.Error as er:
-		print("Drop:Smth went wrong")
-		logging.warning( str(nameTable))
-		logging.warning( er.message)
-		pass
+	drop = False
+	logging.info("DROP TABLE "+str(nameTable))
+	while not drop :
+		
+		try:
+			logging.info("Trying to access database")
+			conn = sqlite3.connect(getStoragePath(),timeout=10)
+			c = conn.cursor()
+		except:
+			logging.exception("Database couldn't be reached"+getStoragePath())
+			sys.exit("Database couldn't be reached")
+		
+		logging.info("Success: connected to database")
+		
+		
+		try:
+			c.execute("DROP TABLE "+str(nameTable))
+			drop = True
+			# Save (commit) the changes
+			conn.commit()
+			# We can also close the connection if we are done with it.
+			# Just be sure any changes have been committed or they will be lost.
+			conn.close()
+			c.close()
+			logging.info("Done deleting files and dropping")
+
+		except  sqlite3.Error as er:
+			print("Drop:Smth went wrong")
+			logging.warning( str(nameTable))
+			logging.warning( er.message)
+			
+			
 		
 #return a list of each column's name (first line of a sheet has it)
 #I:A sheet
@@ -202,19 +226,17 @@ def createTables(mainName,allshnames,allcolumns):
 		cptC = 0
 		for nameSheet in allshnames:
 			pk = []
-			zeid = "id"
+			f.write('')
 			f.write('\ndb.define_table("'+str(nameSheet).encode('utf-8')+'"')
 			for c in allcolumns[cptC]:
 				
 				#nameColumn should always be first element
 				s=""
 				for item in c[+1:]:
-	
 					if item == "primarykey":
 						pk.append(c[0])
 					elif item ==  "idthis":
 						s+=',"id"'
-						zeid=c[0]
 					elif "reference=" in item:
 						nvref = item.split("=")
 						if len(nvref) > 1 :
@@ -237,8 +259,6 @@ def createTables(mainName,allshnames,allcolumns):
 		##Defining some heplful functions
 		#getDb -> called from default.py to get the same db as db.py
 		f.write('\ndef getDb():\n    from os import path\n    module_path=os.path.abspath(os.path.dirname(__file__))\n    dbpath = module_path + "/../databases"\n    db_name = "storage.sqlite"\n    db = DAL("sqlite://"+ db_name ,folder=dbpath, auto_import=True)\n    return db')
-		#getTable -> called from default.py to get the table generated
-		f.write('\ndef getTable(db):\n    return db.'+str(allshnames[0]).encode('utf-8'))
 		
 		return tabReferences
 #Determine if a table has already been defined in the past
@@ -277,15 +297,6 @@ def requestDrop(tableHere,allshnames,allfiles):
 		if answer == "y":
 			logging.info("Deleting files in databases and view")
 			
-			try:
-				logging.info("Trying to access database")
-				conn = sqlite3.connect(getStoragePath())
-				c = conn.cursor()
-			except:
-				logging.exception("Database couldn't be reached"+getStoragePath())
-				sys.exit("Database couldn't be reached")
-			
-			logging.info("Success: connected to database")
 			drop = True
 			
 			for s in allshnames:
@@ -294,14 +305,14 @@ def requestDrop(tableHere,allshnames,allfiles):
 					#7 is the last digit of the hashkey of the files table
 					if "7_"+str(s)+'.table' in f:
 						
-						dropTable(s,c)
+						dropTable(s)
 						delTable = f
 						
 				if delTable is not "":		
 					try:
 						logging.info("Trying delete file")
 						if os.name =="nt":
-							subprocess.check_call(["DEL","..\\applications\\TEMPLATE\\databases\\"+str(delTable)],shell=True)
+							subprocess.check_call(["DEL","/Q","..\\applications\\TEMPLATE\\databases\\"+str(delTable)],shell=True)
 						else:
 							subprocess.check_call(["rm","-rfv","../applications/TEMPLATE/databases/"+str(delTable)])
 						
@@ -310,18 +321,12 @@ def requestDrop(tableHere,allshnames,allfiles):
 						logging.exception("Error while deleting "+str(f)+" : "+er.message )
 						sys.exit("Cannot erase file")
 			
-			# Save (commit) the changes
-			conn.commit()
-			# We can also close the connection if we are done with it.
-			# Just be sure any changes have been committed or they will be lost.
-			conn.close()
-			logging.info("Done deleting files and dropping")
-			
 		
 		elif answer == "n":
 			logging.info("Stopping script on user's demand")
 			print "Stopping script"
 			exit()
+			
 #Create controllers in web2py, define represent which calls boo functions and define forms to create plots
 #I:all list containing all sheets'name,tabReferences is a list of relation of references between tables/sheets ("A/B"),workbook created from the file in arg, the file's name minus path and extension,the path of storage.sqlite,the path of the file
 #O:None
@@ -346,9 +351,11 @@ def createControllers(allshnames,tabReferences,wb,mainName,script_path,pathFile)
 						#s1 is what is referenced c0 is the name of the column which references item1
 							if ((s[1] == item.split('=')[1])) :
 								f.write('\n    db.'+s[0]+'.'+c[0]+'.represent = lambda val,row:boo'+mainName+str(idx)+'(val,row,db)')
+			'''
 			f.write('\n    rows = db(table).select()')
 			f.write('\n    if (len(rows) == 0):')
 			f.write('\n        initData()')
+			'''
 			f.write('\n    rows = db(table).select()')
 			
 			s="\n    form = FORM("
@@ -380,13 +387,13 @@ def createControllers(allshnames,tabReferences,wb,mainName,script_path,pathFile)
 			f.write("\n        plot=IMG(_src=URL('static','foo.png'),_alt='plot')")
 			f.write('\n    records=SQLFORM.grid(table,paginate=10,maxtextlength=256,showbuttontext=False)')
 			f.write('\n    return dict(form=form, plot=plot, records=records)')
-			
+		'''	
 		# used in case main table is empty	
 		f.write('\ndef initData():')
 		f.write('\n    from subprocess import check_call')
 		f.write('\n    try:\n        subprocess.check_call(["python",'+'"'+str(script_path).replace("\\","/")+"/scriptInit.py"+'","'+pathFile.replace("\\","/")+'"'+"])")
 		f.write('\n    except subprocess.CalledProcessError:\n        sys.exit("Error : scriptInit.py could not be reached")')
-		
+		'''
 		#used to create plot
 		f.write('\ndef makePlot(typeplot,fields,nameTable,whereToSave):')
 		f.write('\n    from subprocess import check_call')
@@ -445,6 +452,7 @@ def createMenu(listmenu):
 		logging.info("Menu done")
 
 #prevent execution on import from scriptInit
+
 if __name__ == '__main__':
 	script_path=os.path.abspath(os.path.dirname(__file__))
 	path=str(createFolder())
@@ -458,6 +466,7 @@ if __name__ == '__main__':
 	if( len(sys.argv)>1 ):
 		logging.info("File found")
 		#changing dir to excel2web2py
+		
 		try:
 			logging.info("Trying to look for excel2web2py folder")
 			os.chdir(script_path)
@@ -482,7 +491,17 @@ if __name__ == '__main__':
 		logging.info("Successfully opened the sheets")
 		logging.info("Trying to retrieve the names of the columns of each sheets")
 		allcolumns = []
+
 		mainName = sys.argv[2].split('.')[0]
+		
+		allfiles = os.listdir('../applications/TEMPLATE/databases')
+		'''
+		tableHere = isTableAlreadyThere(allfiles,allshnames)
+		if tableHere is not "":
+			logging.error("A table has already this name : "+tableHere)
+			sys.exit("A sheet has a name already defined in the database "+tableHere)
+		'''
+		
 		
 		for nameSheet in allsheets:
 			allcolumns.append(getColumns(nameSheet))
@@ -500,10 +519,9 @@ if __name__ == '__main__':
 			sys.exit("Cannot access db_backup")
 		
 		tabReferences = createTables(mainName,allshnames,allcolumns)
-		allfiles = os.listdir('../applications/TEMPLATE/databases')
-		tableHere = isTableAlreadyThere(allfiles,allshnames)
-		if tableHere is not "":
-			requestDrop(tableHere,allshnames,allfiles)
+		
+
+			#requestDrop(tableHere,allshnames,allfiles)
 
 		#actualize allfiles in case of delete
 		allfiles = os.listdir('../applications/TEMPLATE/databases')

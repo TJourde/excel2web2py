@@ -6,7 +6,7 @@ __Supervisor__ : Chambon Laurent
 
 _Python 2.7_ is needed, more on that below with matplotlib
 
-Functionalities :
+Features :
 ----------------
 
 The main purpose of this application is to generate a database from an Excel file on web2py.  
@@ -19,18 +19,21 @@ Before Installation :
 
 __Excel:__
 
-The excel file's name cannot contain special characters or spaces.  
-It will be used to create a SQL Table, so it must respect the same constraints.
+The excel file's name will be used to create a SQL Table, so it must respect the same constraints:  
+The excel file's name cannot contain special characters, numbers or spaces.  
+Only letters and eventually '_' (underscore sign).  
 
 The name of the first sheet is used as the name of the table and the first element of the first row defines the names of the columns of the database so they both should not contain special characters.  
-Separate elements with the '|' (or "pipe") sign. 
+Separate elements with the '|' (or "pipe") sign.  
 
 Look at this example to get a better picture of what is expected to be present on the first cell of a column:  
+ 
 > Nom_francais|type='string'|reference=Nom_anglais|idthis  
 
-The first element is used to generate the SQL Table, it also must follow the same rules that a SQL Table's name does.  
+The first element is used to generate the SQL Table, it is the minimum information expected.  
+Also, it must follow the same rules that a SQL Table's name does.  
 
-Keywords to use to define the table with an example: 
+Keywords to use to define the table with an example:  
 - _type_ can be integer,float,string  
 - _reference_= Another_Table : means that you want to link values to another sheet with the same name; it will display elements from that table on the page.  
 - _idthis_: means that values on this column represent the row instead of the row's number; it will be useful when you are linking tables with reference as it will use data from that column.
@@ -56,9 +59,6 @@ You will also need to have these modules installed before deploying the applicat
 - subprocess to use threads and multi-execution
 - matplotlib to create plots  
 
-__Important__: It is highly recommended to download Python(x,y) as it comes packaged with many modules needed to run matplotlib, only if you have not already installed Python 2.7.  
-If you have, you want to check out the documentation [here](http://matplotlib.org/users/installing.html#windows) to lookup what modules you will need to install.
-
 __Unix:__   
 On Unix, python comes prepackaged on most distributions but you may want to check what version you are using.  
 >python --version
@@ -66,33 +66,67 @@ On Unix, python comes prepackaged on most distributions but you may want to chec
 Install these packages through the terminal using your favorite package manager.  
 Example: `apt-get install xlrd`
 
+You may need to execute those operations as an administrator though (put `sudo` first before an install and input the admin's password)  
+
 __Windows__:  
-You will have to download python 2.7, follow the instructions on the official website  
+__Important__: It is highly recommended to download Python(x,y) on Windows as it comes packaged with many modules needed to run matplotlib, only if you have not already installed Python 2.7.  
+If you have, you want to check out the documentation [here](http://matplotlib.org/users/installing.html#windows) to lookup what modules you will need to install.
+Follow the instructions.
+
 Xlrd is packaged with this application, run :
 > cd path/to/xlrd  
 python setup.py install
 
-You may need to execute those operations as an administrator though (put `sudo` first before an install and input the admin's password)
 
 Installation :
 --------------
 
 unzip the folder in your web2py folder, where web2py.py and applications are located  
-copy TEMPLATE to the applications folder in web2py
+extract and copy TEMPLATE to the applications folder in web2py
 
-Then run these commands:
-> Unix: cd excel2web2py && python script.py path/to/nameExcelfile  
-Windows: cd excel2web2py && python script.py path\to\nameExcelfile
+Then launch web2py:
+> Unix: python web2py.py  
+Windows: run web2py.exe
 
-Then input the password for the administrator of the web2py server  
-For now, it is only accessible at _127.0.0.1:8000_  
+Then input the password for the administrator of the web2py server    
 If the page is not launched automatically, launch a web browser and type in the address bar the address under this line.  
 You are now located at __127.0.0.1:8000/TEMPLATE/default/index.html__
 
-To relaunch your server without import files, you will need to launch it from web2py.exe(Windows) or web2py.py(Unix)  
-On Unix, run these commands : 
-> cd path/to/web2py && python web2py.py
+Web2py :
+------------------
 
-On Windows, simply execute it.
+###Uploading files  
+You are on the main page.  
+You can log in yourself with the button on the top-right corner.  
+If you are logged (not implemented yet to help testing), you will see a form appear.  
+If you click it, you can select an excel file you want to upload.  
+Click "Submit"; a message will appear to tell you if everything ran smoothly.  
+A new button should appear in the menu with the name of your file.  
+Click it then select one of your sheet; you will be redirected to its page.  
 
-__Bugs :__ Matplotlib may not load correctly
+###Viewing data
+You are on the generated page of one of the file's sheets.  
+You can see two things: a form and a grid below.  
+
+The form will create plots from columns with numbers only.   
+Choose one or multiple columns and select one of the plot's types.  
+Click "Submit"; the page may take a while to load.  
+A picture should appear and with one or plural plots.  
+
+The grid contains the data of the file.  
+You can use the search bar to specify requirements on the displayed data.  
+A button on the right of each row will redirect you to a page with this row information only, useful when there is too much data at once.
+If you are logged in, you should also see buttons on the grid.  
+You can click them to add, delete, edit records.
+
+
+Disclosure: 
+------------
+
+All programs, Python and all modules presented here are under free licences at the moment and the property of their respective holders.
+This program and author will not provide support service to any of those.  
+
+
+__Bugs :__ Matplotlib may not load correctly and can take a while to generate plots
+
+2016
