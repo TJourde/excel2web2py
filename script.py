@@ -104,9 +104,9 @@ def isNametATableName(name):
 	try:
 		name.encode('ascii')
 	
-	except (UnicodeError):
-		logging.exception("Name couldn't be encoded in ascii "+name)
-		sys.exit("Name couldn't be encoded in ascii "+name)
+	except UnicodeError as er:
+		logging.exception("Name couldn't be encoded in ascii "+name+" "+er.message)
+		sys.exit("A column's name couldn't be encoded in ascii, don't use accents or special characters")
 	
 	for i in name.split("_"):
 		if not i.isalpha():
@@ -164,16 +164,11 @@ def getColumns(sheet,allshnames):
 	namecols = []
 
 	for colnum in range(sheet.ncols):
-		try:#necessary or else db attributes will look funny 
-			sheet.col_values(colnum)[0].encode('ascii')
-			# first line of that column
-			nc = sheet.col_values(colnum)[0].split('|')
-			isNametATableName(nc[0])
-			namecols.append(nc)
-	
-		except (UnicodeError):
-			logging.exception(sheet.col_values(colnum)[0]+" Column's name couldn't be encoded in ascii")
-			sys.exit(sheet.col_values(colnum)[0]+" Error: Column's name couldn't be encoded in ascii")
+		nc = sheet.col_values(colnum)[0].split('|')
+		# first line of that column	
+		#necessary or else db attributes will look funny 			
+		isNametATableName(nc[0])
+		namecols.append(nc)
 		for item in nc:
 			if "reference=" in item:
 				nvref = item.split("=")
@@ -468,7 +463,7 @@ if __name__ == '__main__':
 	script_path=os.path.abspath(os.path.dirname(__file__))
 	path=str(createFolder())
 	logpath = str(createLogs(path))
-	print ("Consult log file at"+logpath)
+	print ("Consult log file at "+logpath)
 	logging.basicConfig(filename=logpath,level=logging.DEBUG)
 	logging.info('Log created at :'+getTimeH())
 	logging.info("script.py is executed")
