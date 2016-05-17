@@ -357,6 +357,18 @@ def createControllers(allshnames,tabReferences,wb,mainName,script_path,pathFile)
 						#s1 is what is referenced c0 is the name of the column which references item1
 							if ((s[1] == item.split('=')[1])) :
 								f.write('\n    db.'+s[0]+'.'+c[0]+'.represent = lambda val,row:boo'+mainName+str(idx)+'(val,row,db)')
+							
+			for c in getColumns(wb.sheet_by_name(nameTable),allshnames):
+				for item in c:
+					#used to display img
+					if 'dlimage' in item :
+						f.write('\n    db.'+s[0]+'.'+c[0]+'.represent = lambda val,row:IMG(_src=val,_alt=val)')
+					#used to display html links
+					elif 'webaddr' in item :
+						f.write('\n    db.'+s[0]+'.'+c[0]+'.represent = lambda val,row:A(val,_href=val)')
+
+
+					
 			'''
 			f.write('\n    rows = db(table).select()')
 			f.write('\n    if (len(rows) == 0):')
