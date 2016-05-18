@@ -361,9 +361,9 @@ def createControllers(allshnames,tabReferences,wb,mainName,script_path,pathFile)
 			for c in getColumns(wb.sheet_by_name(nameTable),allshnames):
 				for item in c:
 					#used to display img
-					if 'dlimage' in item :
-						f.write('\n    db.'+s[0]+'.'+c[0]+'.represent = lambda val,row:IMG(_src=val,_alt=val)')
-					#used to display html links
+					if 'dlimage' in item :#f.write('\n
+						f.write('\n    db.'+s[0]+'.'+c[0]+'.represent = lambda val,row:IMG(_src=URL("static","UploadedImages/"+str(db(val == db.UploadedImages.imageoname).select().first().Image)),_alt=val) if(( val != "" )and (len(db(db.UploadedImages).select()) > 0)) else val ')
+						#used to display html links
 					elif 'webaddr' in item :
 						f.write('\n    db.'+s[0]+'.'+c[0]+'.represent = lambda val,row:A(val,_href=val)')
 

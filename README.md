@@ -28,7 +28,7 @@ Separate elements with the '|' (or "pipe") sign.
 
 Look at this example to get a better picture of what is expected to be present on the first cell of a column:  
  
-> Nom_francais|type='string'|reference=Nom_anglais|idthis  
+> Nom_francais|type='string'|reference=Nom_anglais 
 
 The first element is used to generate the SQL Table, it is the minimum information expected.  
 Also, it must follow the same rules that a SQL Table's name does.  
@@ -36,8 +36,11 @@ Also, it must follow the same rules that a SQL Table's name does.
 Keywords to use to define the table with an example:  
 - _type_ can be integer,float,string  
 - _reference_= Another_Table : means that you want to link values to another sheet with the same name; it will display elements from that table on the page.  
-- _idthis_: means that values on this column represent the row instead of the row's number; it will be useful when you are linking tables with reference as it will use data from that column.
+- _idthis_: means that values on this column represent the row instead of the row's number; it will be useful when you are linking tables with reference as it will use data from that column.  
+- _webaddr_ : means that the column is storing urls, the user will be able to click on them.  
+- _dlimage_ : means that the column is storing names of images (png,jpeg), the user will be able to see them.  
 
+You can only use one of the last four keywords, in addition to "type" in some cases.
 If you do not define yourself the type of a column, the program can still work but the data may not be formatted the way it is meant; for example, integers may be typecasted to floats.  
 Also, reference and idthis can only work on column containing only integers.  Don't forget to put a '|' at the end of each number 
 A file called _Test_ has been joined to complete these explanations.
@@ -99,9 +102,9 @@ Web2py :
 You are on the main page.  
 You can log in yourself with the button on the top-right corner.  
 If you are logged (not implemented yet to help testing), you will see a form appear.  
-If you click it, you can select an excel file you want to upload.  
+If you click it, you can select an excel file/image you want to upload.  
 Click "Submit"; a message will appear to tell you if everything ran smoothly.  
-A new button should appear in the menu with the name of your file.  
+A new button should appear in the menu with the name of your excel file.  
 Click it then select one of your sheet; you will be redirected to its page.  
 
 ###Viewing data
