@@ -194,7 +194,7 @@ def createDict(mainName,ref,col,filePath,numRef):
 	#ref: name of table referenced
 	#filePath: file's path which will be modified
 	#numRef : reference number in case of multiple references in 'sheet'
-	path=str( createFolder())
+	path=str(createFolder())
 	logpath = str( createLogs(path))
 	logging.basicConfig(filename=logpath,level=logging.DEBUG)
 	
@@ -222,7 +222,27 @@ def createDict(mainName,ref,col,filePath,numRef):
 		f.write('\n    t=["w2p_odd odd","w2p_even even"]')
 		f.write('\n    return TABLE(*[TR(r, _class=t[idx%2]) for idx,r in enumerate(listOfRefs)])')
 
-		
+#Much like createDict but focuses on displaying images from db.UploadedImages and the folder in static
+#I:filePath string
+#O:None
+def linkingPics(mainName,filePath):
+	#filePath: file's path which will be modified
+	path=str(createFolder())
+	logpath = str( createLogs(path))
+	logging.basicConfig(filename=logpath,level=logging.DEBUG)
+	
+	with open(filePath,"a") as f:
+		##Defining reference dict
+				
+		# doo links to dict for sqlform.grid
+		f.write('\ndef doo'+str(mainName)+'(value,row,db):')
+		f.write('\n    listOfImgs = []')
+		f.write('\n    for namePic in value.split("|"):')
+		f.write('\n        if(( namePic != "" )and (len(db(namePic == db.UploadedImages.imageoname).select()) > 0)):')
+		f.write('\n            listOfImgs.append(IMG(_src=URL("static","UploadedImages/"+str(db(namePic == db.UploadedImages.imageoname).select().first().Image)),_alt=namePic))') 
+		f.write('\n        else:')
+		f.write('\n            listOfImgs.append(namePic)')
+		f.write('\n    return listOfImgs')	
 
 # Defining tables in the model and return references
 #I:path of the file,all sheets'name, all columns'name
@@ -358,12 +378,11 @@ def createControllers(allshnames,tabReferences,wb,mainName,script_path,pathFile)
 							if ((s[1] == item.split('=')[1])) :
 								f.write('\n    db.'+s[0]+'.'+c[0]+'.represent = lambda val,row:boo'+mainName+str(idx)+'(val,row,db)')
 							
-			for c in getColumns(wb.sheet_by_name(nameTable),allshnames):
+			for idx,c in enumerate(getColumns(wb.sheet_by_name(nameTable),allshnames)):
 				for item in c:
 					#used to display img
-					if 'dlimage' in item :#f.write('\n
-						f.write('\n    db.'+s[0]+'.'+c[0]+'.represent = lambda val,row:IMG(_src=URL("static","UploadedImages/"+str(db(val == db.UploadedImages.imageoname).select().first().Image)),_alt=val) if(( val != "" )and (len(db(val == db.UploadedImages.imageoname).select()) > 0)) else val ')
-						#used to display html links
+					if 'dlimage' in item :
+						f.write('\n    db.'+s[0]+'.'+c[0]+'.represent = lambda val,row:doo'+mainName+'(val,row,db)')						#used to display html links
 					elif 'webaddr' in item :
 						f.write('\n    db.'+s[0]+'.'+c[0]+'.represent = lambda val,row:A(val,_href=val)')
 
@@ -563,7 +582,7 @@ if __name__ == '__main__':
 			logging.exception("Error while retrieving default_backup : " + er.message)
 			sys.exit("default_backup cannot be found")
 
-		###Dicts
+		###Dicts and Images
 		#we need to define 'boo' functions before the views functions, they will be used to call referenced records
 		logging.info("Creating dicts")
 
@@ -576,6 +595,7 @@ if __name__ == '__main__':
 								if 'reference' in item :
 									columnRef = c[0]
 						createDict(mainName,r.split('/')[1],columnRef,"../applications/TEMPLATE/controllers/"+mainName+".py",idx)
+                linkingPics(mainName,"../applications/TEMPLATE/controllers/"+mainName+".py")
 
 		logging.info("Dicts written")
 
