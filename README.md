@@ -58,6 +58,7 @@ You will also need to have these modules installed before deploying the applicat
 - time to retrieve the time on the machine
 - errno to retrieve errors
 - logging to create logs of the code
+- zipfile to decompress archives of pictures
 - sqlite3 to use databases
 - subprocess to use threads and multi-execution
 - matplotlib to create plots  
@@ -98,7 +99,7 @@ You are now located at __127.0.0.1:8000/TEMPLATE/default/index.html__
 Web2py :
 ------------------
 
-###Uploading files  
+### Uploading files  
 You are on the main page.  
 You can log in yourself with the button on the top-right corner.  
 If you are logged (not implemented yet to help testing), you will see a form appear.  
@@ -110,7 +111,7 @@ Click "Submit"; a message will appear to tell you if everything ran smoothly.
 A new button should appear in the menu with the name of your excel file.  
 Click it then select one of your sheet; you will be redirected to its page.  
 
-###Viewing data
+### Viewing data
 You are on the generated page of one of the file's sheets.  
 You can see two things: a form and a grid below.  
 
