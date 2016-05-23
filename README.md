@@ -103,6 +103,9 @@ You are on the main page.
 You can log in yourself with the button on the top-right corner.  
 If you are logged (not implemented yet to help testing), you will see a form appear.  
 If you click it, you can select an excel file/image you want to upload.  
+The name of an image must follow the same rules as the name of the excel file.
+Supported formats are .png and .jpg  
+You can also package all your images in a .zip archive.  
 Click "Submit"; a message will appear to tell you if everything ran smoothly.  
 A new button should appear in the menu with the name of your excel file.  
 Click it then select one of your sheet; you will be redirected to its page.  
