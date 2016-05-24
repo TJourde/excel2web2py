@@ -1,5 +1,16 @@
 #!usr/bin/env/python
 # -*- coding: utf-8 -*-
+
+#NB:Called from TEMPLATE/controllers/default.py
+
+#Ultimate goals:
+#Check the excel file and the data
+#Create Controllers,Models and Views from the data inside the TEMPLATE application
+#Update the menu
+#Define functions and forms to generate plots
+#Define functions to help displaying data from other sheets
+#Log important informations
+
 try:
 	import sys, os, time, errno
 	import os.path
@@ -12,7 +23,7 @@ try:
 	import matplotlib
 
 except ImportError as er:
-	sys.exit(er.message)
+	sys.exit("Error: "+er.message)
 
 #Retrieve path of storage.sqlite to help executing queries
 #I:None
@@ -106,12 +117,12 @@ def isNametATableName(name):
 	
 	except UnicodeError as er:
 		logging.exception("Name couldn't be encoded in ascii "+name+" "+er.message)
-		sys.exit("A column's name couldn't be encoded in ascii, don't use accents or special characters")
+		sys.exit("Error: A column's name couldn't be encoded in ascii, don't use accents or special characters")
 	
 	for i in name.split("_"):
 		if not i.isalpha():
 			logging.exception("Name has special characters: "+ name)
-			sys.exit("Name has special characters: "+ name )
+			sys.exit("Error: Name has special characters: "+ name )
 		
 #Execute a Drop table sql query
 #I:string name of the table, the cursor which executes queries
@@ -130,7 +141,7 @@ def dropTable (nameTable):
 			c = conn.cursor()
 		except:
 			logging.exception("Database couldn't be reached"+getStoragePath())
-			sys.exit("Database couldn't be reached")
+			sys.exit("Error: Database couldn't be reached")
 		
 		logging.info("Success: connected to database")
 		
@@ -179,14 +190,14 @@ def getColumns(sheet,allshnames):
 							referenceSheet = True
 					if not referenceSheet:
 						logging.error("Reference without a sheet's name "+nvref[0])
-						sys.exit("A reference had no name corresponding to a sheet")
+						sys.exit("Error: A reference had no name corresponding to a sheet")
 				else:
 					logging.error("Reference with no name "+nvref[0])
-					sys.exit("A reference had no name attached")
+					sys.exit("Error: A reference had no name attached")
 			
 	return namecols
 
-#Write in a file the function boo+smth which executes a sql query on a referenced table to generate a table in the sqlform.grid of the view
+#Write in a file the function boo + name of file parsed which will execute a sql query on the ids of a referenced table for each element in order to generate a table in the sqlform.grid of the view
 #Multiple boo are needed to ensure multiple references
 #I:the referenced table string,the column's name,the path of the file and the reference nuber (number of time createDict was called)
 #O:None
@@ -202,6 +213,8 @@ def createDict(mainName,ref,col,filePath,numRef):
 		##Defining reference dict
 				
 		# boo links to dict for sqlform.grid
+		# it will return a table with the first line containing the name of columns (listAttr) 
+		# and the data of the table referenced (listValAttr) for each value separated by pipe contained in a list (listOfRefs)
 		f.write('\ndef boo'+str(mainName)+str(numRef)+'(value,row,db):')
 		f.write('\n    listOfRefs = []')
 		f.write('\n    listAttr=[]')
@@ -235,6 +248,7 @@ def linkingPics(mainName,filePath):
 		##Defining reference dict
 				
 		# doo links to dict for sqlform.grid
+		# pipe separates values 
 		f.write('\ndef doo'+str(mainName)+'(value,row,db):')
 		f.write('\n    listOfImgs = []')
 		f.write('\n    for namePic in value.split("|"):')
@@ -289,15 +303,14 @@ def createTables(mainName,allshnames,allcolumns):
 		return tabReferences
 #Determine if a table has already been defined in the past
 #I:allfiles list of files, all sheets'name
-#O:tableHere
+#O:tableHere, the name of a table present in the database
 def isTableAlreadyThere(allfiles,allshnames):		
 
 	#allow to know if tables should be dropped
 	tableFile = False
 	tableHere = ""
 
-
-	##Test if table's name is a file in databases
+	##Test if table's name is a file in TEMPLATE
 	for i in allshnames:
 		if not tableFile:
 			for f in allfiles:
@@ -345,7 +358,7 @@ def requestDrop(tableHere,allshnames,allfiles):
 						logging.info("Successfully deleted file")
 					except subprocess.CalledProcessError as er:
 						logging.exception("Error while deleting "+str(f)+" : "+er.message )
-						sys.exit("Cannot erase file")
+						sys.exit("Error: Cannot erase file")
 			
 		
 		elif answer == "n":
@@ -393,18 +406,43 @@ def createControllers(allshnames,tabReferences,wb,mainName,script_path,pathFile)
 			f.write('\n    if (len(rows) == 0):')
 			f.write('\n        initData()')
 			'''
+			#create a form with columns, declared as integer or float, as options plus the type of plot and will call makePlot only if at least one column fulfil this condition
 			f.write('\n    rows = db(table).select()')
-			
-			s="\n    form = FORM("
+			s="\n    form = DIV(FORM("
+			atLeastOne = False
 			for c in getColumns(wb.sheet_by_name(nameTable),allshnames):
 				if (("type='integer'" in c) or( "type='float'" in c)):
+					atLeastOne = True
 					s+="DIV(LABEL('"+c[0]+"'),INPUT(_name='"+c[0]+"',_type='checkbox'),_class='row'),"
 			s+="DIV(LABEL('Simple plot'),INPUT(_type='radio',_name='plot',_value='plot' ,value='plot'),LABEL('3D Poly'),INPUT(_type='radio',_name='plot',_value='3dpoly'),LABEL('Subplots'),INPUT(_type='radio',_name='plot',_value='sub'),_class='row'),"
 			s+="INPUT(_type='submit',_class='btn btn-primary',_name='makeplot'),_class='form-horizontal',_action='',_method='post')"
-			if "DIV" in s:
+			s+=',_class="jumbotron")'
+			if atLeastOne:
 				f.write(s)
 			else:
 				f.write("\n    form=''")
+				
+			#create a form with columns, declared as integer or float, as options for X,Y,Z axes
+			s="\n    form2 = DIV(FORM("
+			select="SELECT("
+			cptFields = 0
+			for c in getColumns(wb.sheet_by_name(nameTable),allshnames):
+				if (("type='integer'" in c) or( "type='float'" in c)):
+					select+='"'+c[0]+'",'
+					cptFields+=1
+			select=select[:-1]
+			select+='),'
+			for axe in ['X','Y','Z']:
+				s+="LABEL('"+axe+"'),"+select
+			s+="INPUT(_type='submit',_class='btn btn-primary',_name='makeplotuser'),_class='form-horizontal',_action='',_method='post')"
+			s+=',_class="jumbotron")'
+			
+			if cptFields<3:
+				f.write("\n    form2=''")
+			else:
+				f.write(s)
+				
+			#display an image by calling makePlot and stating the type of plot, the fiels, the name of the table and the file to change
 			f.write("\n    plot=DIV('')")
 			f.write('\n    if ((len(request.post_vars)>2) and ("makeplot" in request.post_vars)):')
 			f.write("\n        vars = request.post_vars.keys()")
@@ -423,7 +461,11 @@ def createControllers(allshnames,tabReferences,wb,mainName,script_path,pathFile)
 			f.write("\n        makePlot(typeplot,fields,nameTable,foo)")
 			f.write("\n        plot=IMG(_src=URL('static','foo.png'),_alt='plot')")
 			f.write('\n    records=SQLFORM.grid(table,paginate=10,maxtextlength=256,showbuttontext=False)')
-			f.write('\n    return dict(form=form, plot=plot, records=records)')
+			f.write("\n    if form != '' or form2 != '':")
+			f.write("\n        caption=H2(T('Select columns to create a plot'))")
+			f.write("\n    else:")
+			f.write("\n        caption=''")			
+			f.write('\n    return dict(caption=caption, form=form, form2=form2, plot=plot, records=records)')
 		'''	
 		# used in case main table is empty	
 		f.write('\ndef initData():')
@@ -488,8 +530,9 @@ def createMenu(listmenu):
 		
 		logging.info("Menu done")
 
-#prevent execution on import from scriptInit
+### Main execution of the code
 
+#prevent execution on import from scriptInit
 if __name__ == '__main__':
 	script_path=os.path.abspath(os.path.dirname(__file__))
 	path=str(createFolder())
@@ -503,14 +546,13 @@ if __name__ == '__main__':
 	if( len(sys.argv)>1 ):
 		logging.info("File found")
 		#changing dir to excel2web2py
-		
 		try:
 			logging.info("Trying to look for excel2web2py folder")
 			os.chdir(script_path)
 			logging.info("excel2web2py* folder found")
 		except os.error as er:
 			logging.exception("Error while looking for excel2web2py folder: " + er.message)
-			sys.exit("Cannot find excel2web2py folder")
+			sys.exit("Error: Cannot find excel2web2py folder")
 		
 		logging.info("Checking if file is well formatted")
 		fileWellFormatted(sys.argv[1])
@@ -553,7 +595,7 @@ if __name__ == '__main__':
 			logging.info("Successfully recover backup of db")
 		except subprocess.CalledProcessError as er:
 			logging.exception("Error while retrieving db_backup: " + er.message)
-			sys.exit("Cannot access db_backup")
+			sys.exit("Error: Cannot access db_backup")
 		
 		tabReferences = createTables(mainName,allshnames,allcolumns)
 		
@@ -580,7 +622,7 @@ if __name__ == '__main__':
 			logging.info("Successfully recover backup of default")
 		except subprocess.CalledProcessError as er:
 			logging.exception("Error while retrieving default_backup : " + er.message)
-			sys.exit("default_backup cannot be found")
+			sys.exit("Error: default_backup cannot be found")
 
 		###Dicts and Images
 		#we need to define 'boo' functions before the views functions, they will be used to call referenced records
@@ -625,7 +667,7 @@ if __name__ == '__main__':
 			logging.info("Successfully created view folder :"+mainName)
 		except subprocess.CalledProcessError as er:
 			logging.exception("Error while creating view folder: "+er.message)
-			sys.exit("Error happened when creating the view folder"+mainName)
+			sys.exit("Error: Error happened when creating the view folder"+mainName)
 		
 		try:
 			logging.info("Trying to create views")
@@ -638,7 +680,7 @@ if __name__ == '__main__':
 				logging.info("Successfully created view :"+nameTable)
 		except subprocess.CalledProcessError as er:
 			logging.exception("Error while creating views files : "+er.message)
-			sys.exit("Error happened when creating views")
+			sys.exit("Error: Error happened when creating views")
 			
 		###create new views end
 		
@@ -654,7 +696,7 @@ if __name__ == '__main__':
 			logging.info("Successfully recover backup of menu")
 		except subprocess.CalledProcessError as er:
 			logging.exception("Error while retrieving backup_menu : "+er.message)
-			sys.exit("menu_backup cannot be found")
+			sys.exit("Error: menu_backup cannot be found")
 			
 		listmenu = createListeMenu()	
 		#Shortcuts

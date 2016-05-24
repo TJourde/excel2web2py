@@ -38,7 +38,7 @@ Keywords to use to define the table with an example:
 - _reference_= Another_Table : means that you want to link values to another sheet with the same name; it will display elements from that table on the page.  
 - _idthis_: means that values on this column represent the row instead of the row's number; it will be useful when you are linking tables with reference as it will use data from that column.  
 - _webaddr_ : means that the column is storing urls, the user will be able to click on them.  
-- _dlimage_ : means that the column is storing names of images (png,jpeg), the user will be able to see them. Also add the extension of the file's name: "paysage.png"  
+- _dlimage_ : means that the column is storing names of images (png,jpeg), the user will be able to see them. Also add the extension of the file's name: "paysage.png|animaux.jpg"  
 
 You can only use one of the last four keywords, in addition to "type" in some cases.
 If you do not define yourself the type of a column, the program can still work but the data may not be formatted the way it is meant; for example, integers may be typecasted to floats.  

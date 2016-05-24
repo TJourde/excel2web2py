@@ -80,6 +80,22 @@ if len(sys.argv) > 3:
 			plt.plot(c.fetchall(),marker='o')
 			plt.ylabel(item+' (Value)')
 		plt.xlabel('Number')
+	elif typeplot == '3daxes' :
+		c.execute("Select "+fields+" from "+nameTable+" Order by "+fields.split(',')[0])
+		res = c.fetchall()
+		#res is a list of tuples [(line1.elt1,line2.elt1,line3.elt1),(line1.elt2,line2.elt2,line3.elt2)...]
+		fig = plt.figure()
+		ax = fig.gca(projection='3d')
+		x = np.array([item[0] for item in res])
+		y = np.array([item[1] for item in res])
+		z = np.array([item[2] for item in res])
+		#create the plot
+		ax.scatter(x,y,z)
+		ax.set_xlabel('X : '+fields.split(',')[0])
+		ax.set_ylabel('Y : '+fields.split(',')[1])
+		ax.set_zlabel('Z : '+fields.split(',')[2])
+		
+		
 	else :
 		c.execute("Select "+fields+" from "+nameTable)
 		res = c.fetchall()
