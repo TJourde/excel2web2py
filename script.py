@@ -286,11 +286,11 @@ def createTables(mainName,allshnames,allcolumns):
 						tabReferences.append(nameSheet+"/"+nvref[1])
 					elif (("type='integer'" == item) or ("type='float'" == item) or ("type='string'" == item)) :
 							s+=","+item.encode('utf-8')
-				f.write(',Field("'+c[0].encode('utf-8')+'"'+s+')')
+				f.write(',\nField("'+c[0].encode('utf-8')+'"'+s+')')
 						
 			cptC += 1
 			if len(pk) > 0:
-				f.write(',primarykey=["'+pk[0].encode('utf-8')+'"')
+				f.write(',\nprimarykey=["'+pk[0].encode('utf-8')+'"')
 				for pki in pk[+1:]:
 					f.write(',"'+pki.encode('utf-8')+'"')
 				f.write(']')
@@ -382,22 +382,23 @@ def createControllers(allshnames,tabReferences,wb,mainName,script_path,pathFile)
 			# necessary to differentiate to prevent dal errors
 			#for each reference
 			for idx,r in enumerate(tabReferences):
-				s=r.split("/")
+				listR=r.split("/")
+				#listR[1] = table referenced
 				#for each column of the table
 				for c in getColumns(wb.sheet_by_name(nameTable),allshnames):
 					for item in c: 
 						if 'reference' in item :
 						#s1 is what is referenced c0 is the name of the column which references item1
-							if ((s[1] == item.split('=')[1])) :
-								f.write('\n    db.'+s[0]+'.'+c[0]+'.represent = lambda val,row:boo'+mainName+str(idx)+'(val,row,db)')
+							if ((listR[1] == item.split('=')[1])) :
+								f.write('\n    db.'+listR[0]+'.'+c[0]+'.represent = lambda val,row:boo'+mainName+str(idx)+'(val,row,db)')
 							
 			for idx,c in enumerate(getColumns(wb.sheet_by_name(nameTable),allshnames)):
 				for item in c:
 					#used to display img
 					if 'dlimage' in item :
-						f.write('\n    db.'+s[0]+'.'+c[0]+'.represent = lambda val,row:doo'+mainName+'(val,row,db)')						#used to display html links
+						f.write('\n    db.'+nameTable+'.'+c[0]+'.represent = lambda val,row:doo'+mainName+'(val,row,db)')						#used to display html links
 					elif 'webaddr' in item :
-						f.write('\n    db.'+s[0]+'.'+c[0]+'.represent = lambda val,row:A(val,_href=val)')
+						f.write('\n    db.'+nameTable+'.'+c[0]+'.represent = lambda val,row:A(val,_href=val)')
 
 
 					
@@ -413,9 +414,9 @@ def createControllers(allshnames,tabReferences,wb,mainName,script_path,pathFile)
 			for c in getColumns(wb.sheet_by_name(nameTable),allshnames):
 				if (("type='integer'" in c) or( "type='float'" in c)):
 					atLeastOne = True
-					s+="DIV(LABEL('"+c[0]+"'),INPUT(_name='"+c[0]+"',_type='checkbox'),_class='row'),"
-			s+="DIV(LABEL('Simple plot'),INPUT(_type='radio',_name='plot',_value='plot' ,value='plot'),LABEL('3D Poly'),INPUT(_type='radio',_name='plot',_value='3dpoly'),LABEL('Subplots'),INPUT(_type='radio',_name='plot',_value='sub'),_class='row'),"
-			s+="INPUT(_type='submit',_class='btn btn-primary',_name='makeplot'),_class='form-horizontal',_action='',_method='post')"
+					s+="\nDIV(LABEL('"+c[0]+"'),INPUT(_name='"+c[0]+"',_type='checkbox'),_class='row'),"
+			s+="\nDIV(LABEL('Simple plot'),INPUT(_type='radio',_name='plot',_value='plot' ,value='plot'),\nLABEL('3D Poly'),INPUT(_type='radio',_name='plot',_value='3dpoly'),\nLABEL('Subplots'),INPUT(_type='radio',_name='plot',_value='sub'),_class='row'),"
+			s+="\nINPUT(_type='submit',_class='btn btn-primary',_name='makeplot'),_class='form-horizontal',_action='',_method='post')"
 			s+=',_class="jumbotron")'
 			if atLeastOne:
 				f.write(s)
@@ -431,7 +432,7 @@ def createControllers(allshnames,tabReferences,wb,mainName,script_path,pathFile)
 					select+='"'+c[0]+'",'
 					cptFields+=1
 			select=select[:-1]
-			select+='),'
+			select+='),\n'
 			for axe in ['X','Y','Z']:
 				s+="LABEL('"+axe+"'),"+select
 			s+="INPUT(_type='submit',_class='btn btn-primary',_name='makeplotuser'),_class='form-horizontal',_action='',_method='post')"
@@ -600,10 +601,10 @@ if __name__ == '__main__':
 		tabReferences = createTables(mainName,allshnames,allcolumns)
 		
 
-			#requestDrop(tableHere,allshnames,allfiles)
+		#requestDrop(tableHere,allshnames,allfiles)
 
 		#actualize allfiles in case of delete
-		allfiles = os.listdir('../applications/TEMPLATE/databases')
+		#allfiles = os.listdir('../applications/TEMPLATE/databases')
 				
 		logging.info("Writing in db finished")
 		logging.info("Closing file")
