@@ -136,5 +136,6 @@ This program and author will not provide support service to any of those.
 
 __Bugs :__ Matplotlib may not load correctly and can take a while to generate plots.  
 If a error says that the Excel file specified had not been found, but a new button appear on the menu, try re-uploading it.
-Html links cannot be clicked on if they are referenced on this page
+Html links and Pictures are only properly displayed on the view they belong to (reference display raw data)
+
 2016
