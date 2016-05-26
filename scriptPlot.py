@@ -73,9 +73,10 @@ if len(sys.argv) > 3:
 		ax.set_ylim3d(-1, len(fields.split(',')))
 		ax.set_zlabel('Value')
 		ax.set_zlim3d(zmin, zmax)
+
 	elif typeplot == 'sub' :
 		for idx,item in enumerate(fields.split(',')) :
-			plt.subplot(len(fields.split(',')),1,idx+1)
+			plt.subplot(len(fields.split(',')),1,idx+1,label=str(idx+1))
 			c.execute("Select "+item+" from "+nameTable)
 			plt.plot(c.fetchall(),marker='o')
 			plt.ylabel(item+' (Value)')
@@ -90,7 +91,7 @@ if len(sys.argv) > 3:
 		y = np.array([item[1] for item in res])
 		z = np.array([item[2] for item in res])
 		#create the plot
-		ax.scatter(x,y,z)
+		ax.scatter(x,y,z,label="xyz")
 		ax.set_xlabel('X : '+fields.split(',')[0])
 		ax.set_ylabel('Y : '+fields.split(',')[1])
 		ax.set_zlabel('Z : '+fields.split(',')[2])
@@ -111,7 +112,6 @@ if len(sys.argv) > 3:
 		plt.xlabel('Number')
 		plt.ylabel('Value')
 		
-	plt.legend(bbox_to_anchor=(0., 1.02, 1., .102), loc=1,ncol=len(fields.split(',')), mode="expand", borderaxespad=0.)
 	conn.close()
 	plt.title('Plot of '+nameTable)
 	plt.savefig(whereToSave)

@@ -431,10 +431,8 @@ def createControllers(allshnames,tabReferences,wb,mainName,script_path,pathFile)
 				if (("type='integer'" in c) or( "type='float'" in c)):
 					select+='"'+c[0]+'",'
 					cptFields+=1
-			select=select[:-1]
-			select+='),\n'
 			for axe in ['X','Y','Z']:
-				s+="LABEL('"+axe+"'),"+select
+				s+="LABEL('"+axe+"'),"+select+'_name="'+axe+'"),\n'
 			s+="INPUT(_type='submit',_class='btn btn-primary',_name='makeplotuser'),_class='form-horizontal',_action='',_method='post')"
 			s+=',_class="jumbotron")'
 			
@@ -445,17 +443,24 @@ def createControllers(allshnames,tabReferences,wb,mainName,script_path,pathFile)
 				
 			#display an image by calling makePlot and stating the type of plot, the fiels, the name of the table and the file to change
 			f.write("\n    plot=DIV('')")
-			f.write('\n    if ((len(request.post_vars)>2) and ("makeplot" in request.post_vars)):')
+			f.write('\n    if len(request.post_vars)>0 and ("makeplot" in request.post_vars or "makeplotuser" in request.post_vars): ')
 			f.write("\n        vars = request.post_vars.keys()")
-			f.write("\n        vars.remove('makeplot')")
 			f.write('\n        fields=""')
-			f.write("\n        typeplot=''")   
-			f.write("\n        for v in vars :")
-			f.write("\n            if v == 'plot' :")
-			f.write("\n                typeplot = request.post_vars.plot")
-			f.write("\n            else :")
-			f.write("\n                fields+=str(v)+','")
-			f.write("\n        fields=fields[:-1]")
+			f.write("\n        typeplot=''")  
+			f.write('\n        if "makeplot" in request.post_vars:')
+			f.write("\n            vars.remove('makeplot')") 
+			f.write("\n            for v in vars :")
+			f.write("\n                if v == 'plot' :")
+			f.write("\n                    typeplot = request.post_vars.plot")
+			f.write("\n                else :")
+			f.write("\n                    fields+=str(v)+','")
+			f.write("\n            fields=fields[:-1]")
+			f.write('\n        elif "makeplotuser" in request.post_vars:')
+			f.write('\n            typeplot="3daxes"')
+			f.write("\n            vars.remove('makeplotuser')")
+			f.write("\n            for v in vars :")
+			f.write("\n                fields+=request.post_vars[v]+','")
+			f.write("\n            fields=fields[:-1]")
 			f.write("\n        nameTable ='"+nameTable+"'")
 			f.write("\n        foo = os.path.abspath(os.path.dirname(__file__))")
 			f.write("\n        foo = foo + '/../static/foo.png' ")
@@ -467,6 +472,7 @@ def createControllers(allshnames,tabReferences,wb,mainName,script_path,pathFile)
 			f.write("\n    else:")
 			f.write("\n        caption=''")			
 			f.write('\n    return dict(caption=caption, form=form, form2=form2, plot=plot, records=records)')
+
 		'''	
 		# used in case main table is empty	
 		f.write('\ndef initData():')
