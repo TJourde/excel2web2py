@@ -231,7 +231,7 @@ def createDict(mainName,ref,col,filePath,numRef):
 		f.write('\n                            listAttr.append(attr)')
 		f.write('\n                        RepresentedElement = row[attr]')
 		f.write('\n                        if ".png" or  ".jpg" in row[attr]:')
-		f.write('\n                            RepresentedElement=(dooTest(row[attr],None,db))')
+		f.write('\n                            RepresentedElement=(doo'+str(mainName)+'(row[attr],None,db))')
 		f.write('\n                        if "http" in row[attr]:')
 		f.write('\n                            RepresentedElement=(A(row[attr],_href=row[attr]))')
 		f.write('\n                        listValAttr.append(RepresentedElement)')
