@@ -75,8 +75,8 @@ def fileWellFormatted(pathFile):
 	logging.basicConfig(filename=logpath,level=logging.DEBUG)
 	
 	if(" " in pathFile):
-		logging.error("File's name has spaces")
-		sys.exit("Error: file's name has spaces")
+		logging.error("File's name has spaces.")
+		sys.exit("Error: file's name has spaces.")
 
 	try:
 		pathFile.encode('ascii')
@@ -97,8 +97,8 @@ def tryOpenWorkbookFile(pathFile):
 		wb = xlrd.open_workbook(pathFile)
 		return wb
 	except(IOError):
-		logging.exception("File couldn't be opened")
-		sys.exit("Error: File couldn't be opened")
+		logging.exception("File couldn't be opened.")
+		sys.exit("Error: File couldn't be opened.")
 		
 #Test if name pass criteria(no spaces,ascii only,alpha only)
 #I:string to test
@@ -109,20 +109,20 @@ def isNametATableName(name):
 	logging.basicConfig(filename=logpath,level=logging.DEBUG)
 	
 	if(" " in name):
-		logging.error("Name has spaces "+name)
-		sys.exit("Error: Name has spaces"+name)
+		logging.error("Name has spaces "+name.encode('utf8'))
+		sys.exit("Error: Name has spaces "+name.encode('utf8'))
 	
 	try:
 		name.encode('ascii')
 	
 	except UnicodeError as er:
-		logging.exception("Name couldn't be encoded in ascii "+name+" "+er.message)
-		sys.exit("Error: A column's name couldn't be encoded in ascii, don't use accents or special characters")
+		logging.exception("Name couldn't be encoded in ascii "+name.encode('utf8')+" "+er.message)
+		sys.exit("Error: A column's name couldn't be encoded in ascii, don't use accents or special characters. "+name.encode('utf8'))
 	
 	for i in name.split("_"):
 		if not i.isalpha():
-			logging.exception("Name has special characters: "+ name)
-			sys.exit("Error: Name has special characters: "+ name )
+			logging.exception("Name has special characters or numbers: "+ name.encode('utf8'))
+			sys.exit("Error: Name has special characters or numbers: "+ name.encode('utf8') )
 		
 #Execute a Drop table sql query
 #I:string name of the table, the cursor which executes queries
@@ -189,11 +189,11 @@ def getColumns(sheet,allshnames):
 						if nvref[1] == nameSheet:
 							referenceSheet = True
 					if not referenceSheet:
-						logging.error("Reference without a sheet's name "+nvref[0])
-						sys.exit("Error: A reference had no name corresponding to a sheet")
+						logging.error("Reference without a sheet's name "+nvref[0].encode('utf8'))
+						sys.exit("Error: A reference had no name corresponding to a sheet "+nvref[0].encode('utf8'))
 				else:
-					logging.error("Reference with no name "+nvref[0])
-					sys.exit("Error: A reference had no name attached")
+					logging.error("Reference with no name "+nvref[0].encode('utf8'))
+					sys.exit("Error: A reference had no name attached "+nvref[0].encode('utf8'))
 			
 	return namecols
 
@@ -642,9 +642,12 @@ if __name__ == '__main__':
 
 		for namesheet in allshnames:		
 				for idx,r in enumerate(tabReferences):
+				#column|reference=OtherSheet
+				#r = sheet/OtherSheet
 					if namesheet == r.split('/')[0]:
 						columnRef =""
 						for c in getColumns(wb.sheet_by_name(namesheet),allshnames):
+						#c = [name,keyword,keyword,...]
 							for item in c: 
 								if 'reference' in item :
 									columnRef = c[0]
@@ -679,7 +682,7 @@ if __name__ == '__main__':
 			logging.info("Successfully created view folder :"+mainName)
 		except subprocess.CalledProcessError as er:
 			logging.exception("Error while creating view folder: "+er.message)
-			sys.exit("Error: Error happened when creating the view folder"+mainName)
+			sys.exit("Error: Error happened when creating the view folder"+mainName.encode('utf8'))
 		
 		try:
 			logging.info("Trying to create views")
