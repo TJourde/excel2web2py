@@ -111,6 +111,7 @@ if len(sys.argv) > 3:
 			cpt+=1
 		plt.xlabel('Number')
 		plt.ylabel('Value')
+		plt.legend(bbox_to_anchor=(0.,1.02,1.,.102),loc=1,ncol=len(fields.split(',')),mode="expand",borderaxespad=0.)
 		
 	conn.close()
 	plt.title('Plot of '+nameTable)

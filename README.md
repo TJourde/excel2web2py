@@ -77,7 +77,7 @@ __Important__: It is highly recommended to download Python(x,y) on Windows as it
 If you have, you want to check out the documentation [here](http://matplotlib.org/users/installing.html#windows) to lookup what modules you will need to install.
 Follow the instructions.
 
-Xlrd is packaged with this application, run :
+Xlrd is packaged with this application,extract it then run :
 > cd path/to/xlrd  
 python setup.py install
 
@@ -85,7 +85,7 @@ python setup.py install
 Installation :
 --------------
 
-unzip the folder in your web2py folder, where web2py.py and applications are located  
+Unzip the folder in your web2py folder, where web2py.py and applications are located  
 extract and copy TEMPLATE to the applications folder in web2py
 
 Then launch web2py:

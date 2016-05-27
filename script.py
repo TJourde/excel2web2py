@@ -29,7 +29,8 @@ except ImportError as er:
 #I:None
 #O:Absolute path of storage.sqlite
 def getStoragePath():
-	return str(os.path.abspath(os.path.dirname(__file__)))+"/../applications/TEMPLATE/databases/storage.sqlite"
+	storagePath = os.path.abspath(os.path.dirname(__file__))+"/../applications/TEMPLATE/databases/storage.sqlite"
+	return storagePath.decode('latin-1')
 	
 #Retrieve local time to generate logs
 #I:None
@@ -78,12 +79,12 @@ def fileWellFormatted(pathFile):
 		logging.error("File's name has spaces.")
 		sys.exit("Error: file's name has spaces.")
 
-	try:
-		pathFile.encode('ascii')
+	#try:
+	#	pathFile.encode('ascii')
 	
-	except (UnicodeError):
-		logging.exception("File's name couldn't be encoded in ascii")
-		sys.exit("Error : File's name couldn't be encoded in ascii")
+	#except (UnicodeError):
+	#	logging.exception("File's name couldn't be encoded in ascii")
+	#	sys.exit("Error : File's name couldn't be encoded in ascii")
 
 #Try to open file as a workbook
 #I:path of file
@@ -236,6 +237,7 @@ def createDict(mainName,ref,col,filePath,numRef):
 		f.write('\n                            RepresentedElement=(A(row[attr],_href=row[attr]))')
 		f.write('\n                        listValAttr.append(RepresentedElement)')
 		f.write('\n        listOfRefs.append(listValAttr)')
+		#comment the line under to stop displaying name columns in grid
 		f.write('\n    listOfRefs.insert(0,listAttr)')
 		f.write('\n    t=["w2p_odd odd","w2p_even even"]')
 		f.write('\n    return TABLE(*[TR(r, _class=t[idx%2]) for idx,r in enumerate(listOfRefs)])')
@@ -565,6 +567,14 @@ if __name__ == '__main__':
 		except os.error as er:
 			logging.exception("Error while looking for excel2web2py folder: " + er.message)
 			sys.exit("Error: Cannot find excel2web2py folder")
+			
+		try:
+			logging.info("Trying to look for database")
+			os.path.isfile(getStoragePath())
+			logging.info("database found")
+		except os.error as er:
+			logging.exception("Error while looking for database: " + er.message)
+			sys.exit("Error: Cannot find database")
 		
 		logging.info("Checking if file is well formatted")
 		fileWellFormatted(sys.argv[1])
