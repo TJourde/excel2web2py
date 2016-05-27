@@ -68,7 +68,7 @@ def createFolder():
 			raise
 	finally:
 		return path
-	
+#Done by web2py
 #Test if name file pass criteria(no spaces,ascii only)
 #I:path of file
 #O:None
@@ -80,13 +80,14 @@ def fileWellFormatted(pathFile):
 	if(" " in pathFile):
 		logging.error("File's name has spaces.")
 		sys.exit("Error: file's name has spaces.")
-
-	#try:
-	#	pathFile.encode('ascii')
 	
-	#except (UnicodeError):
-	#	logging.exception("File's name couldn't be encoded in ascii")
-	#	sys.exit("Error : File's name couldn't be encoded in ascii")
+	try:
+		pathFile.encode('ascii')
+	
+	except (UnicodeError):
+		logging.exception("File's name couldn't be encoded in ascii")
+		sys.exit("Error : File's name couldn't be encoded in ascii")
+
 
 #Try to open file as a workbook
 #I:path of file
@@ -318,7 +319,6 @@ def isTableAlreadyThere(allfiles,allshnames):
 	#allow to know if tables should be dropped
 	tableFile = False
 	tableHere = ""
-
 	##Test if table's name is a file in TEMPLATE
 	for i in allshnames:
 		if not tableFile:
@@ -579,10 +579,8 @@ if __name__ == '__main__':
 		except os.error as er:
 			logging.exception("Error while looking for database: " + er.message)
 			sys.exit("Error: Cannot find database")
+			
 		
-		logging.info("Checking if file is well formatted")
-		fileWellFormatted(sys.argv[1])
-		logging.info("File is well formatted")
 		logging.info("Trying to open file")
 		wb = tryOpenWorkbookFile(sys.argv[1])
 		logging.info("Successfully opened the file")
@@ -600,16 +598,26 @@ if __name__ == '__main__':
 		mainName = sys.argv[2].split('.')[0]
 		
 		allfiles = os.listdir('../applications/TEMPLATE/databases')
-		'''
+		
 		tableHere = isTableAlreadyThere(allfiles,allshnames)
-		if tableHere is not "":
+		if str(tableHere) != "":
 			logging.error("A table has already this name : "+tableHere)
-			sys.exit("A sheet has a name already defined in the database "+tableHere)
-		'''
+			sys.exit("Error: A sheet has a name already defined in the database "+tableHere)
+		
 		
 		
 		for nameSheet in allsheets:
 			allcolumns.append(getColumns(nameSheet,allshnames))
+		for sheet in allcolumns:
+			for element in sheet:
+				nameColumn=element[0]
+				cptC=0
+				for element in sheet:
+					if element[0]==nameColumn:
+						cptC+=1
+				if cptC > 1:
+					logging.error("Column with same name "+nameColumn)
+					sys.exit("Error: Column with same name "+nameColumn)
 		logging.info("Successfully retrieved the name of the columns")
 	
 		try:
