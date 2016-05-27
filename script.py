@@ -30,7 +30,9 @@ except ImportError as er:
 #O:Absolute path of storage.sqlite
 def getStoragePath():
 	storagePath = os.path.abspath(os.path.dirname(__file__))+"/../applications/TEMPLATE/databases/storage.sqlite"
-	return storagePath.decode('latin-1')
+	if os.name == "nt":
+		return storagePath.decode('latin-1')
+	return storagePath
 	
 #Retrieve local time to generate logs
 #I:None
