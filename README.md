@@ -17,6 +17,11 @@ You can also create plots from columns containing only numbers : a picture will 
 Before Installation :
 ---------------------
 
+__Web2py:__  
+
+You must have installed web2py on your computer, consult this [site](http://www.web2py.com/).  
+If one of your applications is named TEMPLATE, you have to rename it.  
+
 __Excel:__
 
 The excel file's name will be used to create a SQL Table, so it must respect the same constraints:  
@@ -28,21 +33,26 @@ Separate elements with the '|' (or "pipe") sign.
 
 Look at this example to get a better picture of what is expected to be present on the first cell of a column:  
  
-> Nom_francais|type='string'|reference=Nom_anglais 
+> Nom_francais|type='string'  
+
+Another example :  
+> Traduction|reference=Nom_anglais  
 
 The first element is used to generate the SQL Table, it is the minimum information expected.  
 Also, it must follow the same rules that a SQL Table's name does.  
 
 Keywords to use to define the table with an example:  
-- _type_ can be integer,float,string  
-- _reference_= Another_Table : means that you want to link values to another sheet with the same name; it will display elements from that table on the page.  
+- _type_ can be integer,float,string  ; do not forget the apostrophes ('): type='typeChosen'
+- _reference_=Another_Table : means that you want to link values to another sheet with the same name; it will display elements from that table on the page. No spaces after reference.  
 - _idthis_: means that values on this column represent the row instead of the row's number; it will be useful when you are linking tables with reference as it will use data from that column.  
 - _webaddr_ : means that the column is storing urls, the user will be able to click on them.  
-- _dlimage_ : means that the column is storing names of images (png,jpeg), the user will be able to see them. Also add the extension of the file's name: "paysage.png|animaux.jpg"  
+- _dlimage_ : means that the column is storing names of images (png,jpg), the user will be able to see them. Also add the extension of the file's name: "paysage.png|animaux.jpg"  
 
-You can only use one of the last four keywords, in addition to "type" in some cases.
+You can only use one of the keywords per column. 
 If you do not define yourself the type of a column, the program can still work but the data may not be formatted the way it is meant; for example, integers may be typecasted to floats.  
-Also, reference and idthis can only work on column containing only integers.  Don't forget to put a '|' at the end of each number 
+Also, reference and idthis can only work on columns containing only integers.  Do not forget to put a pipe ('|') at the end of each number for reference.  
+
+When you input numbers, use dots ('.') instead of commas (',') for the decimal separator.  
 A file called _Test_ has been joined to complete these explanations.
 
 __Programs:__
@@ -63,6 +73,14 @@ You will also need to have these modules installed before deploying the applicat
 - subprocess to use threads and multi-execution
 - matplotlib to create plots  
 
+Installation :
+--------------
+
+Unzip the folder in your web2py folder, where web2py.py and applications are located.  
+Extract TEMPLATE.zip and copy the folder to the applications folder in web2py. Inside web2p/applications/TEMPLATE/, It should look like this: cache,controllers,cron,databases...
+
+Installation XLRD:  
+
 __Unix:__   
 On Unix, python comes prepackaged on most distributions but you may want to check what version you are using.  
 >python --version
@@ -77,24 +95,26 @@ __Important__: It is highly recommended to download Python(x,y) on Windows as it
 If you have, you want to check out the documentation [here](http://matplotlib.org/users/installing.html#windows) to lookup what modules you will need to install.
 Follow the instructions.
 
-Xlrd is packaged with this application,extract it then run :
-> cd path/to/xlrd  
-python setup.py install
+Xlrd is packaged with this application, extract it.  
+Open a command prompt then run these commands with the right path:
+> cd C:\\path\\to\\xlrd\\folder
+> python setup.py install
 
+Tips : On Windows 7, Open the xlrd folder extracted and Press SHIFT + Right-click on the Window Explorer (no file selected) to open a command prompt.  
+You will only need to input the second instruction.  
 
-Installation :
---------------
+__Launching Web2Py__:  
+To launch web2py, open a terminal on Unix or go open your web2py folder on windows:
+> Unix:  
+cd path/to/web2py/folder
+python web2py.py
 
-Unzip the folder in your web2py folder, where web2py.py and applications are located  
-extract and copy TEMPLATE to the applications folder in web2py
+> Windows:  
+run web2py.exe  
 
-Then launch web2py:
-> Unix: python web2py.py  
-Windows: run web2py.exe
-
-Then input the password for the administrator of the web2py server    
-If the page is not launched automatically, launch a web browser and type in the address bar the address under this line.  
-You are now located at __127.0.0.1:8000/TEMPLATE/default/index.html__
+Then input the password for the administrator of the web2py server.    
+If the page is not launched automatically, launch a web browser and replace the word after the server IP by TEMPLATE.  
+You are now located at __Server IP/TEMPLATE/default/index.html__
 
 Web2py :
 ------------------
@@ -139,6 +159,6 @@ This program and author will not provide support service to any of those.
 
 __Bugs :__ Matplotlib may not load correctly and can take a while to generate plots.  
 If a error says that the Excel file specified had not been found, but a new button appear on the menu, try re-uploading it.  
-If you abort the process when uploading a file, it can create empty view or corrupt file/image.
+If you abort the process when uploading a file, it can create empty views/databases or corrupt file/image uploaded.
 
 2016
