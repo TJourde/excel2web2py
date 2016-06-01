@@ -205,7 +205,7 @@ def getColumns(sheet,allshnames):
 #Multiple boo are needed to ensure multiple references
 #I:the referenced table string,the column's name,the path of the file and the reference nuber (number of time createDict was called)
 #O:None
-def createDict(mainName,ref,col,filePath,numRef):
+def createDict(mainName,col,ref,filePath,numRef):
 	#ref: name of table referenced
 	#filePath: file's path which will be modified
 	#numRef : reference number in case of multiple references in 'sheet'
@@ -667,13 +667,17 @@ if __name__ == '__main__':
 				#column|reference=OtherSheet
 				#r = sheet/OtherSheet
 					if namesheet == r.split('/')[0]:
-						columnRef =""
+						columnRef = ""
 						for c in getColumns(wb.sheet_by_name(namesheet),allshnames):
 						#c = [name,keyword,keyword,...]
-							for item in c: 
-								if 'reference' in item :
+							idxc = 0
+							while columnRef == "" and idxc < len(c):
+								item = c[idxc]
+								if 'reference' in item and r.split('/')[1] in item :
 									columnRef = c[0]
-						createDict(mainName,r.split('/')[1],columnRef,"../applications/TEMPLATE/controllers/"+mainName+".py",idx)
+								idxc+=1
+						if columnRef != "":
+							createDict(mainName,columnRef,r.split('/')[1],"../applications/TEMPLATE/controllers/"+mainName+".py",idx)
                 linkingPics(mainName,"../applications/TEMPLATE/controllers/"+mainName+".py")
 
 		logging.info("Dicts written")
@@ -758,5 +762,3 @@ if __name__ == '__main__':
 		'''
 	else:
 		sys.exit("Error : no file selected")
-
-
