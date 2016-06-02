@@ -29,7 +29,7 @@ except ImportError as er:
 #I:None
 #O:Absolute path of storage.sqlite
 def getStoragePath():
-	storagePath = os.path.abspath(os.path.dirname(__file__))+"/../applications/TEMPLATE/databases/storage.sqlite"
+	storagePath = os.path.abspath(os.path.dirname(__file__))+"/../databases/storage.sqlite"
 	if os.name == "nt":
 		return storagePath.decode('latin-1')
 	return storagePath
@@ -273,7 +273,7 @@ def linkingPics(mainName,filePath):
 #O:list tabReferences
 def createTables(mainName,allshnames,allcolumns):           
 	tabReferences = [] #used also to write represent attr in default controller
-	with open("../applications/TEMPLATE/models/db_"+mainName+".py","a") as f:
+	with open("../models/db_"+mainName+".py","a") as f:
 		logging.info("Successfully opened db")
 		logging.info("Creating tables")
 		##Defining sheet table
@@ -360,9 +360,9 @@ def requestDrop(tableHere,allshnames,allfiles):
 					try:
 						logging.info("Trying delete file")
 						if os.name =="nt":
-							subprocess.check_call(["DEL","/Q","..\\applications\\TEMPLATE\\databases\\"+str(delTable)],shell=True)
+							subprocess.check_call(["DEL","/Q","..\\databases\\"+str(delTable)],shell=True)
 						else:
-							subprocess.check_call(["rm","-rfv","../applications/TEMPLATE/databases/"+str(delTable)])
+							subprocess.check_call(["rm","-rfv","../databases/"+str(delTable)])
 						
 						logging.info("Successfully deleted file")
 					except subprocess.CalledProcessError as er:
@@ -380,7 +380,7 @@ def requestDrop(tableHere,allshnames,allfiles):
 #O:None
 def createControllers(allshnames,tabReferences,wb,mainName,script_path,pathFile):
 	#used for calling scriptInit once page has loaded
-	with open("../applications/TEMPLATE/controllers/"+mainName+".py","a") as f:
+	with open("../controllers/"+mainName+".py","a") as f:
 		logging.info("Successfully opened "+mainName+".py")
 			
 		# then, we define all links to views from this file
@@ -504,10 +504,10 @@ def createControllers(allshnames,tabReferences,wb,mainName,script_path,pathFile)
 #O:list of menu and submenus		
 def createListeMenu():
 	listmenu=[]
-	allviews = os.listdir('../applications/TEMPLATE/views')
+	allviews = os.listdir('../views')
 	for view in allviews:
-		if ((os.path.isdir('../applications/TEMPLATE/views/'+view)) and ('default' not in view)):
-			allhtml = os.listdir('../applications/TEMPLATE/views/'+view)
+		if ((os.path.isdir('../views/'+view)) and ('default' not in view)):
+			allhtml = os.listdir('../views/'+view)
 			submenus = []
 			submenus.append(str(view))
 			#for some reason, list dir display files in the chronological order in reverse on Linux
@@ -526,7 +526,7 @@ def createListeMenu():
 #O:None
 def createMenu(listmenu):	
 	## Shortcuts
-	with open("../applications/TEMPLATE/models/menu.py","a") as f:
+	with open("../models/menu.py","a") as f:
 		logging.info("Writing menu shortcuts")
 		f.write("def _():\n    app = request.application\n    ctr = request.controller")
 		f.write("\n    response.menu += [")
@@ -597,7 +597,7 @@ if __name__ == '__main__':
 
 		mainName = sys.argv[2].split('.')[0]
 		
-		allfiles = os.listdir('../applications/TEMPLATE/databases')
+		allfiles = os.listdir('../databases')
 		
 		tableHere = isTableAlreadyThere(allfiles,allshnames)
 		if str(tableHere) != "":
@@ -623,9 +623,9 @@ if __name__ == '__main__':
 		try:
 			logging.info("Trying to recover backup of db")
 			if os.name =="nt":
-				subprocess.check_call(["copy","/Y",'..\\applications\\TEMPLATE\\models\\db_backup.py','..\\applications\\TEMPLATE\\models\\db_'+mainName+'.py'],shell=True)
+				subprocess.check_call(["copy","/Y",'..\\models\\db_backup.py','..\\models\\db_'+mainName+'.py'],shell=True)
 			else:
-				subprocess.check_call(["cp","-v","../applications/TEMPLATE/models/db_backup.py","../applications/TEMPLATE/models/db_"+mainName+".py"])	
+				subprocess.check_call(["cp","-v","../models/db_backup.py","../models/db_"+mainName+".py"])	
 			logging.info("Successfully recover backup of db")
 		except subprocess.CalledProcessError as er:
 			logging.exception("Error while retrieving db_backup: " + er.message)
@@ -637,7 +637,7 @@ if __name__ == '__main__':
 		#requestDrop(tableHere,allshnames,allfiles)
 
 		#actualize allfiles in case of delete
-		#allfiles = os.listdir('../applications/TEMPLATE/databases')
+		#allfiles = os.listdir('../databases')
 				
 		logging.info("Writing in db finished")
 		logging.info("Closing file")
@@ -648,9 +648,9 @@ if __name__ == '__main__':
 		try:
 			logging.info("Trying to recover backup of default")
 			if os.name =="nt":
-				subprocess.check_call(["copy","/Y","..\\applications\\TEMPLATE\\controllers\\default_backup.py","..\\applications\\TEMPLATE\\controllers\\"+mainName+".py"],shell=True)
+				subprocess.check_call(["copy","/Y","..\\controllers\\default_backup.py","..\\controllers\\"+mainName+".py"],shell=True)
 			else:
-				subprocess.check_call(["cp","-v","../applications/TEMPLATE/controllers/default_backup.py","../applications/TEMPLATE/controllers/"+mainName+".py"])
+				subprocess.check_call(["cp","-v","../controllers/default_backup.py","../controllers/"+mainName+".py"])
 			
 			
 			logging.info("Successfully recover backup of default")
@@ -677,8 +677,8 @@ if __name__ == '__main__':
 									columnRef = c[0]
 								idxc+=1
 						if columnRef != "":
-							createDict(mainName,columnRef,r.split('/')[1],"../applications/TEMPLATE/controllers/"+mainName+".py",idx)
-                linkingPics(mainName,"../applications/TEMPLATE/controllers/"+mainName+".py")
+							createDict(mainName,columnRef,r.split('/')[1],"../controllers/"+mainName+".py",idx)
+                linkingPics(mainName,"../controllers/"+mainName+".py")
 
 		logging.info("Dicts written")
 
@@ -693,18 +693,18 @@ if __name__ == '__main__':
 		#Delete old folder
 		try:
 				if os.name =="nt":
-					subprocess.call(["RD","/S","/Q","..\\applications\\TEMPLATE\\views\\"+mainName],shell=True)
+					subprocess.call(["RD","/S","/Q","..\\views\\"+mainName],shell=True)
 				else:
-					subprocess.call(["rm","-rfv","../applications/TEMPLATE/views/"+mainName+"/"])
+					subprocess.call(["rm","-rfv","../views/"+mainName+"/"])
 					
 				logging.info("Successfully deleted folder :"+mainName)
 		except subprocess.CalledProcessError as er:
 			print er.message
 		try:
 			if os.name =="nt":
-				subprocess.call(["mkdir","..\\applications\\TEMPLATE\\views\\"+mainName],shell=True)
+				subprocess.call(["mkdir","..\\views\\"+mainName],shell=True)
 			else:
-				subprocess.call(["mkdir","-v","../applications/TEMPLATE/views/"+mainName+"/"])
+				subprocess.call(["mkdir","-v","../views/"+mainName+"/"])
 			logging.info("Successfully created view folder :"+mainName)
 		except subprocess.CalledProcessError as er:
 			logging.exception("Error while creating view folder: "+er.message)
@@ -714,9 +714,9 @@ if __name__ == '__main__':
 			logging.info("Trying to create views")
 			for nameTable in allshnames:
 				if os.name =="nt":
-					subprocess.check_call(["copy","/Y","..\\applications\\TEMPLATE\\views\\default\\table.html","..\\applications\\TEMPLATE\\views\\"+mainName+"\\"+nameTable+".html"],shell=True)
+					subprocess.check_call(["copy","/Y","..\\views\\default\\table.html","..\\views\\"+mainName+"\\"+nameTable+".html"],shell=True)
 				else:
-					subprocess.check_call(["cp","-v","../applications/TEMPLATE/views/default/table.html","../applications/TEMPLATE/views/"+mainName+"/"+nameTable+".html"])
+					subprocess.check_call(["cp","-v","../views/default/table.html","../views/"+mainName+"/"+nameTable+".html"])
 			
 				logging.info("Successfully created view :"+nameTable)
 		except subprocess.CalledProcessError as er:
@@ -730,9 +730,9 @@ if __name__ == '__main__':
 		try:
 			logging.info("Trying to recover backup of menu")
 			if os.name =="nt":
-				subprocess.check_call(["copy","/Y","..\\applications\\TEMPLATE\\models\\backup_menu.py","..\\applications\\TEMPLATE\\models\\menu.py"],shell=True)
+				subprocess.check_call(["copy","/Y","..\\models\\backup_menu.py","..\\models\\menu.py"],shell=True)
 			else:
-				subprocess.check_call(["cp","-v","../applications/TEMPLATE/models/backup_menu.py","../applications/TEMPLATE/models/menu.py"])
+				subprocess.check_call(["cp","-v","../models/backup_menu.py","../models/menu.py"])
 			
 			logging.info("Successfully recover backup of menu")
 		except subprocess.CalledProcessError as er:
@@ -762,3 +762,5 @@ if __name__ == '__main__':
 		'''
 	else:
 		sys.exit("Error : no file selected")
+
+

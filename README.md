@@ -20,7 +20,7 @@ Before Installation :
 __Web2py:__  
 
 You must have installed web2py on your computer, consult this [site](http://www.web2py.com/).  
-If one of your applications is named TEMPLATE, you have to rename it.  
+If one of your applications is named Excel, rename it or rename this application.  
 
 __Excel:__
 
@@ -75,9 +75,8 @@ You will also need to have these modules installed before deploying the applicat
 
 Installation :
 --------------
-
-Unzip the folder in your web2py folder, where web2py.py and applications are located.  
-Extract TEMPLATE.zip and copy the folder to the applications folder in web2py. Inside web2p/applications/TEMPLATE/, It should look like this: cache,controllers,cron,databases...
+  
+Extract Excel.zip and copy the folder to the applications folder in web2py. Inside web2p/applications/Excel/, It should look like this: cache,controllers,cron,databases,excel2web2py...
 
 Installation XLRD:  
 
@@ -113,8 +112,8 @@ python web2py.py
 run web2py.exe  
 
 Then input the password for the administrator of the web2py server.    
-If the page is not launched automatically, launch a web browser and replace the word after the server IP by TEMPLATE.  
-You are now located at __Server IP/TEMPLATE/default/index.html__
+If the page is not launched automatically, launch a web browser and replace the word after the server IP by Excel or his new name.  
+You are now located at __Server IP/Excel/default/index.html__
 
 Web2py :
 ------------------
