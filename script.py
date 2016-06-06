@@ -100,17 +100,21 @@ def tryOpenWorkbookFile(pathFile):
 		#workbook doesn't need to be explicitly closed
 		wb = xlrd.open_workbook(pathFile)
 		return wb
-	except(IOError):
+	except:
 		logging.exception("File couldn't be opened.")
 		sys.exit("Error: File couldn't be opened.")
 		
-#Test if name pass criteria(no spaces,ascii only,alpha only)
+#Test if name pass criteria( _ not first, no spaces,ascii only,alpha only)
 #I:string to test
 #O:None
 def isNametATableName(name):
 	path=str( createFolder())
 	logpath = str( createLogs(path))
 	logging.basicConfig(filename=logpath,level=logging.DEBUG)
+	
+	if name[0] == "_":
+		logging.error("Name cannot begin by '_' "+name.encode('utf8'))
+		sys.exit("Error: Name cannot begin by '_' "+name.encode('utf8'))
 	
 	if(" " in name):
 		logging.error("Name has spaces "+name.encode('utf8'))
@@ -548,7 +552,7 @@ def createMenu(listmenu):
 		
 		logging.info("Menu done")
 
-### Main execution of the code
+### Main execution of the code ###
 
 #prevent execution on import from scriptInit
 if __name__ == '__main__':
@@ -762,5 +766,3 @@ if __name__ == '__main__':
 		'''
 	else:
 		sys.exit("Error : no file selected")
-
-
