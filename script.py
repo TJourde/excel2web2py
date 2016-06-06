@@ -112,13 +112,17 @@ def isNametATableName(name):
 	logpath = str( createLogs(path))
 	logging.basicConfig(filename=logpath,level=logging.DEBUG)
 	
-	if name[0] == "_":
-		logging.error("Name cannot begin by '_' "+name.encode('utf8'))
-		sys.exit("Error: Name cannot begin by '_' "+name.encode('utf8'))
+	if len(name)==0:
+		logging.error("Name is empty")
+		sys.exit("Error: Name is empty")
 	
 	if(" " in name):
 		logging.error("Name has spaces "+name.encode('utf8'))
 		sys.exit("Error: Name has spaces "+name.encode('utf8'))
+	
+	if name[0] == "_":
+		logging.error("Name cannot begin by '_' "+name.encode('utf8'))
+		sys.exit("Error: Name cannot begin by '_' "+name.encode('utf8'))
 	
 	try:
 		name.encode('ascii')
@@ -446,7 +450,10 @@ def createController(allshnames,tabReferences,wb,mainName,script_path,pathFile):
 					cptFields+=1
 			for axe in ['X','Y','Z']:
 				if axe == 'Z':
-					select=select.replace("SELECT(","SELECT('',")
+					if cptFields==3:
+						select=select.replace("SELECT(","SELECT('',")
+					else:
+						select="SELECT('',"
 				s+="LABEL('"+axe+"'),"+select+'_name="'+axe+'"),\n'
 			s+="INPUT(_type='submit',_class='btn btn-primary',_name='makeplotuser'),_class='form-horizontal',_action='',_method='post')"
 			s+=',_class="jumbotron")'
