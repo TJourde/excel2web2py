@@ -445,11 +445,13 @@ def createController(allshnames,tabReferences,wb,mainName,script_path,pathFile):
 					select+='"'+c[0]+'",'
 					cptFields+=1
 			for axe in ['X','Y','Z']:
+				if axe == 'Z':
+					select=select.replace("SELECT(","SELECT('',")
 				s+="LABEL('"+axe+"'),"+select+'_name="'+axe+'"),\n'
 			s+="INPUT(_type='submit',_class='btn btn-primary',_name='makeplotuser'),_class='form-horizontal',_action='',_method='post')"
 			s+=',_class="jumbotron")'
 			
-			if cptFields<3:
+			if cptFields<2:
 				f.write("\n    form2=''")
 			else:
 				f.write(s)
@@ -476,9 +478,9 @@ def createController(allshnames,tabReferences,wb,mainName,script_path,pathFile):
 			f.write('\n        elif "makeplotuser" in request.post_vars:')
 			f.write('\n            typeplot="3daxes"')
 			f.write("\n            vars.remove('makeplotuser')")
-			f.write("\n            for v in vars :")
-			f.write("\n                fields+=request.post_vars[v]+','")
-			f.write("\n            fields=fields[:-1]")
+			f.write("\n            fields=request.post_vars.X +',' + request.post_vars.Y ")
+			f.write("\n            if request.post_vars.Z != '':")
+			f.write("\n                fields += ' ,' + request.post_vars.Z")
 			f.write("\n            makePlot(typeplot,fields,nameTable,foo)")
 			f.write("\n            plot=IMG(_src=URL('static','foo.png'),_alt='plot')")
 			f.write('\n    records=SQLFORM.grid(table,paginate=10,maxtextlength=256,showbuttontext=False)')
