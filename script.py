@@ -379,10 +379,10 @@ def requestDrop(tableHere,allshnames,allfiles):
 			print "Stopping script"
 			exit()
 			
-#Create controllers in web2py, define represent which calls boo functions and define forms to create plots
+#Create controller in web2py, define represent which calls boo functions and define forms to create plots
 #I:all list containing all sheets'name,tabReferences is a list of relation of references between tables/sheets ("A/B"),workbook created from the file in arg, the file's name minus path and extension,the path of storage.sqlite,the path of the file
 #O:None
-def createControllers(allshnames,tabReferences,wb,mainName,script_path,pathFile):
+def createController(allshnames,tabReferences,wb,mainName,script_path,pathFile):
 	#used for calling scriptInit once page has loaded
 	with open("../controllers/"+mainName+".py","a") as f:
 		logging.info("Successfully opened "+mainName+".py")
@@ -686,8 +686,8 @@ if __name__ == '__main__':
 
 		logging.info("Dicts written")
 
-		#Create Controllers
-		createControllers(allshnames,tabReferences,wb,mainName,script_path,sys.argv[1])
+		#Create Controller
+		createController(allshnames,tabReferences,wb,mainName,script_path,sys.argv[1])
 
 			
 		logging.info("Writing in controller "+mainName+" finished")
