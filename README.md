@@ -159,8 +159,10 @@ All programs, Python and all modules presented here are under free licences at t
 This program and author will not provide support service to any of those.  
 
 
-__Bugs :__ Matplotlib may not load correctly and can take a while to generate plots.  
+__Bugs :__  
+If the file cannot be opened, try to save it as the other format (xlsx <-> xls) and try to re-upload it.  
+Matplotlib may not load correctly and can take a while to generate plots.  
 If a error says that the Excel file specified had not been found, but a new button appear on the menu, try re-uploading it.  
-If you abort the process when uploading a file, it can create empty views/databases or corrupt file/image uploaded.
+If you abort the process when uploading a file, it can create empty views/databases or corrupt file/image uploaded.  
 
 2016
