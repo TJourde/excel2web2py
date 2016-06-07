@@ -132,14 +132,7 @@ Click it then select one of your sheet; you will be redirected to its page.
 
 ### Viewing data
 You are on the generated page of one of the file's sheets.  
-You can see two things: a form and a grid below.  
-
-The form will create plots from columns declared to contain numbers only.   
-Choose one or multiple columns and select one of the plot's types.  
-Click "Submit"; the page may take a while to load.  
-A picture should appear and with one or plural plots.  
-Another form appears if at least 3 columns are declared to contain numbers only.  
-You can choose which column correspond to each axis.  
+You can at least see grid below.  
 
 The grid contains the data of the file.  
 You can use the search bar to specify requirements on the displayed data.  
@@ -147,6 +140,16 @@ Middle click on a row to scroll with ease.
 A button on the right of each row will redirect you to a page with this row information only, useful when there is too much data at once.
 If you are logged in, you should also see buttons on the grid.  
 You can click them to add, delete, edit records.
+
+If you have used "type=integer" or "type=float" in your file, you should see a form appear.  
+The form will create plots from columns declared to contain numbers only.   
+Choose one or multiple columns and select one of the plot's types.  
+Click "Submit"; the page may take a while to load.  
+A picture should appear and with one or plural plots.  
+Another form appears if at least 2 columns are declared to contain numbers only.  
+You can choose which column correspond to each axis to generate a 3D plot.  
+Select Z as empty if you wish to create a 2D plot instead.
+
 
 
 Disclosure: 
