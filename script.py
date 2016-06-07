@@ -241,7 +241,7 @@ def createDict(mainName,col,ref,filePath,numRef):
 		f.write('\n                        if attr not in listAttr:')
 		f.write('\n                            listAttr.append(attr)')
 		f.write('\n                        RepresentedElement = row[attr]')
-		f.write('\n                        if ".png" or  ".jpg" in row[attr]:')
+		f.write('\n                        if ".png" in row[attr] or  ".jpg" in row[attr]:')
 		f.write('\n                            RepresentedElement=(searchPics'+str(mainName)+'(row[attr],None,db))')
 		f.write('\n                        if "http" in row[attr]:')
 		f.write('\n                            RepresentedElement=(A(row[attr],_href=row[attr]))')
@@ -269,7 +269,7 @@ def linkingPics(mainName,filePath):
 		# searchPics links to dict for sqlform.grid
 		# pipe separates values 
 		f.write('\ndef searchPics'+str(mainName)+'(value,row,db):')
-		f.write('\n    listOfImgs = []')
+		f.write('\n    listOfImgs = OBJECT()')
 		f.write('\n    for namePic in value.split("|"):')
 		f.write('\n        if(( namePic != "" )and (len(db(namePic == db.UploadedImages.imageoname).select()) > 0)):')
 		f.write('\n            listOfImgs.append(IMG(_src=URL("static","UploadedImages/"+str(db(namePic == db.UploadedImages.imageoname).select().first().Image)),_alt=namePic))') 
@@ -513,10 +513,8 @@ def createListeMenu():
 			allhtml = os.listdir('../views/'+view)
 			submenus = []
 			submenus.append(str(view))
-			#for some reason, list dir display files in the chronological order in reverse on Linux
-			
-			if os.name !="nt":
-				allhtml=reversed(allhtml)
+
+			allhtml=reversed(allhtml)
 			
 			for html in allhtml:
 				#to make sure it is a view
