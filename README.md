@@ -53,7 +53,7 @@ If you do not define yourself the type of a column, the program can still work b
 Also, reference and idthis can only work on columns containing only integers.  Do not forget to put a pipe ('|') at the end of each number for reference.  
 
 When you input numbers, use dots ('.') instead of commas (',') for the decimal separator.  
-A file called _Test_ has been joined to complete these explanations.
+A file called _Test_ has been included to complete these explanations.
 
 __Programs:__
 
