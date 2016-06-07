@@ -123,6 +123,10 @@ def isNameATableName(name):
 	if name[0] == "_":
 		logging.error("Name cannot begin by '_' "+name.encode('utf8'))
 		sys.exit("Error: Name cannot begin by '_' "+name.encode('utf8'))
+
+	if 'idthis' in name == or 'dlimage' in name or 'webaddr' in name :
+		logging.error("Name reserved "+name.encode('utf8'))
+		sys.exit("Error: Name reserved "+name.encode('utf8'))
 	
 	try:
 		name.encode('ascii')
