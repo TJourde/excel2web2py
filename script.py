@@ -38,7 +38,7 @@ def getStoragePath():
 #I:None
 #O:Local time h:m:s
 def getTimeH():
-	localtime = time.localtime(time.time()) #heure machine
+	localtime = time.localtime(time.time()) #time machine
 	timeh =  str(localtime[3])+'_'+str(localtime[4])+'_'+str(localtime[5])
 	return timeh
 	
@@ -46,7 +46,7 @@ def getTimeH():
 #I: path of Log folder
 #O:Return path of newly generated log file
 def createLogs(zepath):
-	localtime = time.localtime(time.time()) #heure machine
+	localtime = time.localtime(time.time()) #time machine
 	timeh =  getTimeH()
 	logpath = str(zepath)+"Log_"+timeh+".log"	
 	return logpath
@@ -54,7 +54,7 @@ def createLogs(zepath):
 #I:None
 #O:Return path of newly generated folder
 def createFolder():
-	localtime = time.localtime(time.time()) #heure machine
+	localtime = time.localtime(time.time()) #time machine
 	timedate = str(localtime[0])+'_'+str(localtime[1])+'_'+str(localtime[2])
 	if os.name =="nt":
 		path="C:\\TMP\\"+timedate+'\\'
@@ -107,7 +107,7 @@ def tryOpenWorkbookFile(pathFile):
 #Test if name pass criteria( _ not first, no spaces,ascii only,alpha only)
 #I:string to test
 #O:None
-def isNametATableName(name):
+def isNameATableName(name):
 	path=str( createFolder())
 	logpath = str( createLogs(path))
 	logging.basicConfig(filename=logpath,level=logging.DEBUG)
@@ -156,8 +156,7 @@ def dropTable (nameTable):
 			sys.exit("Error: Database couldn't be reached")
 		
 		logging.info("Success: connected to database")
-		
-		
+			
 		try:
 			c.execute("DROP TABLE "+str(nameTable))
 			drop = True
@@ -190,7 +189,7 @@ def getColumns(sheet,allshnames):
 		nc = sheet.col_values(colnum)[0].split('|')
 		# first line of that column	
 		#necessary or else db attributes will look funny 			
-		isNametATableName(nc[0])
+		isNameATableName(nc[0])
 		namecols.append(nc)
 		for item in nc:
 			if "reference=" in item:
@@ -209,9 +208,9 @@ def getColumns(sheet,allshnames):
 			
 	return namecols
 
-#Write in a file the function boo + name of file parsed which will execute a sql query on the ids of a referenced table for each element in order to generate a table in the sqlform.grid of the view
-#Multiple boo are needed to ensure multiple references
-#I:the referenced table string,the column's name,the path of the file and the reference nuber (number of time createDict was called)
+#Write in a file the function searchReferences + name of file parsed which will execute a sql query on the ids of a referenced table for each element in order to generate a table in the sqlform.grid of the view
+#Multiple searchReferences are needed to ensure multiple references
+#I:the referenced table string,the column's name,the path of the file and the reference number (number of times createDict was called)
 #O:None
 def createDict(mainName,col,ref,filePath,numRef):
 	#ref: name of table referenced
@@ -224,10 +223,10 @@ def createDict(mainName,col,ref,filePath,numRef):
 	with open(filePath,"a") as f:
 		##Defining reference dict
 				
-		# boo links to dict for sqlform.grid
+		# searchReferences links to dict for sqlform.grid
 		# it will return a table with the first line containing the name of columns (listAttr) 
 		# and the data of the table referenced (listValAttr) for each value separated by pipe contained in a list (listOfRefs)
-		f.write('\ndef boo'+str(mainName)+str(numRef)+'(value,row,db):')
+		f.write('\ndef searchReferences'+str(mainName)+str(numRef)+'(value,row,db):')
 		f.write('\n    listOfRefs = []')
 		f.write('\n    listAttr=[]')
 		f.write('\n    rowvals = row.'+col+'.split("|")')
@@ -243,13 +242,15 @@ def createDict(mainName,col,ref,filePath,numRef):
 		f.write('\n                            listAttr.append(attr)')
 		f.write('\n                        RepresentedElement = row[attr]')
 		f.write('\n                        if ".png" or  ".jpg" in row[attr]:')
-		f.write('\n                            RepresentedElement=(doo'+str(mainName)+'(row[attr],None,db))')
+		f.write('\n                            RepresentedElement=(searchPics'+str(mainName)+'(row[attr],None,db))')
 		f.write('\n                        if "http" in row[attr]:')
 		f.write('\n                            RepresentedElement=(A(row[attr],_href=row[attr]))')
 		f.write('\n                        listValAttr.append(RepresentedElement)')
 		f.write('\n        listOfRefs.append(listValAttr)')
+		
 		#comment the line under to stop displaying name columns in grid
 		f.write('\n    listOfRefs.insert(0,listAttr)')
+		
 		f.write('\n    t=["w2p_odd odd","w2p_even even"]')
 		f.write('\n    return TABLE(*[TR(r, _class=t[idx%2]) for idx,r in enumerate(listOfRefs)])')
 
@@ -265,9 +266,9 @@ def linkingPics(mainName,filePath):
 	with open(filePath,"a") as f:
 		##Defining reference dict
 				
-		# doo links to dict for sqlform.grid
+		# searchPics links to dict for sqlform.grid
 		# pipe separates values 
-		f.write('\ndef doo'+str(mainName)+'(value,row,db):')
+		f.write('\ndef searchPics'+str(mainName)+'(value,row,db):')
 		f.write('\n    listOfImgs = []')
 		f.write('\n    for namePic in value.split("|"):')
 		f.write('\n        if(( namePic != "" )and (len(db(namePic == db.UploadedImages.imageoname).select()) > 0)):')
@@ -319,6 +320,7 @@ def createTables(mainName,allshnames,allcolumns):
 		f.write('\ndef getDb():\n    from os import path\n    module_path=os.path.abspath(os.path.dirname(__file__))\n    dbpath = module_path + "/../databases"\n    db_name = "storage.sqlite"\n    db = DAL("sqlite://"+ db_name ,folder=dbpath, auto_import=True)\n    return db')
 		
 		return tabReferences
+		
 #Determine if a table has already been defined in the past
 #I:allfiles list of files, all sheets'name
 #O:tableHere, the name of a table present in the database
@@ -336,6 +338,7 @@ def isTableAlreadyThere(allfiles,allshnames):
 						tableFile = True
 						tableHere = i
 	return tableHere
+	
 #Execute dropTable and delete views on user's agreement as it deletes everything from those tables
 #I:the name of the table already defined,allfiles list of files, all sheets'name
 #O:None
@@ -383,7 +386,7 @@ def requestDrop(tableHere,allshnames,allfiles):
 			print "Stopping script"
 			exit()
 			
-#Create controller in web2py, define represent which calls boo functions and define forms to create plots
+#Create controller in web2py, define represent which calls searchReferences functions and define forms to create plots
 #I:all list containing all sheets'name,tabReferences is a list of relation of references between tables/sheets ("A/B"),workbook created from the file in arg, the file's name minus path and extension,the path of storage.sqlite,the path of the file
 #O:None
 def createController(allshnames,tabReferences,wb,mainName,script_path,pathFile):
@@ -407,23 +410,17 @@ def createController(allshnames,tabReferences,wb,mainName,script_path,pathFile):
 						if 'reference' in item :
 						#s1 is what is referenced c0 is the name of the column which references item1
 							if ((listR[1] == item.split('=')[1])) :
-								f.write('\n    db.'+listR[0]+'.'+c[0]+'.represent = lambda val,row:boo'+mainName+str(idx)+'(val,row,db)')
+								f.write('\n    db.'+listR[0]+'.'+c[0]+'.represent = lambda val,row:searchReferences'+mainName+str(idx)+'(val,row,db)')
 							
 			for idx,c in enumerate(getColumns(wb.sheet_by_name(nameTable),allshnames)):
 				for item in c:
 					#used to display img
 					if 'dlimage' in item :
-						f.write('\n    db.'+nameTable+'.'+c[0]+'.represent = lambda val,row:doo'+mainName+'(val,row,db)')						#used to display html links
+						f.write('\n    db.'+nameTable+'.'+c[0]+'.represent = lambda val,row:searchPics'+mainName+'(val,row,db)')						
+					#used to display html links
 					elif 'webaddr' in item :
 						f.write('\n    db.'+nameTable+'.'+c[0]+'.represent = lambda val,row:A(val,_href=val)')
 
-
-					
-			'''
-			f.write('\n    rows = db(table).select()')
-			f.write('\n    if (len(rows) == 0):')
-			f.write('\n        initData()')
-			'''
 			#create a form with columns, declared as integer or float, as options plus the type of plot and will call makePlot only if at least one column fulfil this condition
 			f.write('\n    rows = db(table).select()')
 			s="\n    form = DIV(FORM("
@@ -497,13 +494,6 @@ def createController(allshnames,tabReferences,wb,mainName,script_path,pathFile):
 			f.write("\n        caption=''")			
 			f.write('\n    return dict(caption=caption, form=form, form2=form2, plot=plot, records=records)')
 
-		'''	
-		# used in case main table is empty	
-		f.write('\ndef initData():')
-		f.write('\n    from subprocess import check_call')
-		f.write('\n    try:\n        subprocess.check_call(["python",'+'"'+str(script_path).replace("\\","/")+"/scriptInit.py"+'","'+pathFile.replace("\\","/")+'"'+"])")
-		f.write('\n    except subprocess.CalledProcessError:\n        sys.exit("Error : scriptInit.py could not be reached")')
-		'''
 		#used to create plot
 		f.write('\ndef makePlot(typeplot,fields,nameTable,whereToSave):')
 		f.write('\n    from subprocess import check_call')
@@ -534,6 +524,7 @@ def createListeMenu():
 					submenus.append(str(html.split('.')[0]))
 			listmenu.append(submenus)
 	return listmenu
+	
 #Recreate the menu of menu.py
 #I:list of menu and submenus
 #O:None
@@ -601,7 +592,7 @@ if __name__ == '__main__':
 		allshnames = wb.sheet_names()
 		
 		for s in allshnames:
-			isNametATableName(s)
+			isNameATableName(s)
 		
 		allsheets = wb.sheets()
 		logging.info("Successfully opened the sheets")
@@ -645,18 +636,10 @@ if __name__ == '__main__':
 			sys.exit("Error: Cannot access db_backup")
 		
 		tabReferences = createTables(mainName,allshnames,allcolumns)
-		
-
-		#requestDrop(tableHere,allshnames,allfiles)
-
-		#actualize allfiles in case of delete
-		#allfiles = os.listdir('../databases')
 				
 		logging.info("Writing in db finished")
 		logging.info("Closing file")
 			
-
-		
 		### Insert Rows
 		try:
 			logging.info("Trying to recover backup of default")
@@ -672,7 +655,7 @@ if __name__ == '__main__':
 			sys.exit("Error: default_backup cannot be found")
 
 		###Dicts and Images
-		#we need to define 'boo' functions before the views functions, they will be used to call referenced records
+		#we need to define 'searchReferences' functions before the views functions, they will be used to call referenced records
 		logging.info("Creating dicts")
 
 		for namesheet in allshnames:		
@@ -759,19 +742,5 @@ if __name__ == '__main__':
 			
 		### Making menu end
 			
-		###launch web2py
-		'''
-		try:
-			logging.info("Trying to launch web2py")
-			if os.name =="nt": 
-				subprocess.check_call(["%cd%..\\web2py.exe"],shell=True)
-			else:
-				subprocess.check_call(["python", "../web2py.py"])
-		except subprocess.CalledProcessError as er:
-			logging.exception("Error while executing web2py : " + er.message)
-			sys.exit("Error: python is no present on this computer or web2py could not be reached")
-		
-		launch web2py end
-		'''
 	else:
 		sys.exit("Error : no file selected")
